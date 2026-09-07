@@ -1,0 +1,9 @@
+title: Solar Router Card Dev
+views:
+  - title: Card
+    path: card
+    cards:
+      # Fill in device_id with a real ESPHome router, or leave it empty to see
+      # the "choose a device" state.
+      - type: custom:solar-router-card
+        device_id: ""

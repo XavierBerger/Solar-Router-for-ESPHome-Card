@@ -1,0 +1,15 @@
+# Home Assistant instance for developing the card.
+#
+# The card is served from /config/www, which Home Assistant exposes as
+# /local/ — same-origin, exactly like a HACS install, so what is tested here
+# is what users get.
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: solar-router-card-ha
+    volumes:
+      - ./homeassistant/config:/config:z
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8123:8123"
+    restart: unless-stopped

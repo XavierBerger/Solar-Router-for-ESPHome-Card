@@ -1,0 +1,14 @@
+default_config:
+
+# YAML mode keeps the development dashboard reproducible: it is versioned in
+# ui-lovelace.yaml rather than living in the browser's storage.
+lovelace:
+  mode: yaml
+  resources:
+    # Home Assistant caches /local/ for a month. Bump ?v= to see a rebuild
+    # immediately instead of hunting for a stale bundle.
+    - url: /local/solar-router/solar-router-card.js?v=1
+      type: module
+
+logger:
+  default: info
