@@ -50,6 +50,18 @@ reliable rather than a guess.
 Resolution order: filter `hass.entities` by `device_id` → look up `original_name` in the cached entity
 registry → fall back to the slugified entity-id suffix only when `original_name` is empty.
 
+Two properties of `config/entity_registry/list` make this work, both checked against the Home
+Assistant source (2026.9.1) rather than assumed:
+
+- It carries **no `require_admin`** decorator, unlike three other commands in the same module, so a
+  non-admin household member sees a working card.
+- Its payload includes `original_name`, and Home Assistant returns the *unprefixed* form for entities
+  with `has_entity_name` — which every ESPHome entity has. So the value is `"Activate Solar Routing"`,
+  the package's `name:` exactly, with no device prefix to strip.
+
+Do not swap it for `config/entity_registry/list_for_display`, which is what backs `hass.entities`: its
+compact payload has no `original_name`, and the card would be left guessing from entity ids.
+
 The role→entity table lives in `src/detect/catalog.ts` and is the single source of truth. Keep entity
 names there; do not scatter them across components.
 
