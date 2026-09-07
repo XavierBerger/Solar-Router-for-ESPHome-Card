@@ -1,0 +1,8 @@
+dist/
+node_modules/
+package-lock.json
+
+# Markdown is hand-wrapped at 100 columns with hand-aligned tables. Prettier
+# pads table cells to the width of their longest prose cell, which makes the
+# documentation unreadable in a diff.
+*.md

@@ -1,0 +1,38 @@
+{
+  "name": "solar-router-card",
+  "version": "0.1.0",
+  "description": "Home Assistant Lovelace card for Solar Router for ESPHome — adapts to the modules your router was built from",
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hacf-fr/Solar-Router-for-ESPHome-Card"
+  },
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "dev:build": "./dev/build-card.sh",
+    "dev:up": "./dev/dev-up.sh",
+    "dev:down": "./dev/dev-down.sh"
+  },
+  "dependencies": {
+    "lit": "^3.2.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "rollup": "^4.29.1",
+    "tslib": "^2.8.1",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.2"
+  }
+}
