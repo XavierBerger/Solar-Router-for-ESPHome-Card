@@ -1,0 +1,31 @@
+# Build output — published as a GitHub release asset, never committed
+dist/
+
+# Dependencies
+node_modules/
+
+# Test artefacts
+coverage/
+test-results/
+playwright-report/
+.playwright/
+
+# Home Assistant dev instance runtime state.
+# Only dev/homeassistant/config/{configuration.yaml,ui-lovelace.yaml} are versioned;
+# everything HA writes at runtime stays out of the repository.
+dev/homeassistant/config/*
+!dev/homeassistant/config/configuration.yaml
+!dev/homeassistant/config/ui-lovelace.yaml
+!dev/homeassistant/config/www/
+dev/homeassistant/config/www/*
+# HA only registers the /local/ route when config/www exists at startup,
+# so the directory itself must survive a fresh clone.
+!dev/homeassistant/config/www/.gitkeep
+
+# Local secrets for dev/dump-device.mjs (HA URL + long-lived token)
+.env
+.env.local
+
+# Editors / OS
+.DS_Store
+*.swp
