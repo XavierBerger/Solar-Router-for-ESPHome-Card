@@ -1,10 +1,12 @@
 import resolve from "@rollup/plugin-node-resolve";
+import json from "@rollup/plugin-json";
 import typescript from "@rollup/plugin-typescript";
 import terser from "@rollup/plugin-terser";
 
 const dev = process.env.ROLLUP_WATCH === "true" || process.env.NODE_ENV === "development";
+const demo = process.env.BUILD_DEMO === "true";
 
-export default {
+const production = {
   input: "src/solar-router-card.ts",
   output: {
     // Stable filename, deliberately without a content hash: the Lovelace
@@ -19,3 +21,24 @@ export default {
     ...(dev ? [] : [terser({ format: { comments: false } })]),
   ],
 };
+
+/**
+ * The demo bundle, built only when asked for.
+ *
+ * A separate entry point is what keeps the fixtures out of production: they are
+ * reachable from `dev/demo-entry.ts` and from nowhere under `src/`, so
+ * `dist/solar-router-card.js` cannot pick them up however the tree is shaken.
+ */
+const demoBundle = {
+  input: "dev/demo-entry.ts",
+  output: { file: "dist/solar-router-demo.js", format: "es", sourcemap: true },
+  plugins: [
+    resolve(),
+    json(),
+    // The demo reaches into `test/fixtures`, which `tsconfig.json` does not
+    // cover; `tsconfig.test.json` includes both trees.
+    typescript({ tsconfig: "./tsconfig.test.json", sourceMap: true, inlineSources: true }),
+  ],
+};
+
+export default demo ? [production, demoBundle] : production;

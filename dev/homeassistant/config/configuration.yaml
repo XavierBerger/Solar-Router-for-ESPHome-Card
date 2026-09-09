@@ -7,7 +7,11 @@ lovelace:
   resources:
     # Home Assistant caches /local/ for a month. Bump ?v= to see a rebuild
     # immediately instead of hunting for a stale bundle.
-    - url: /local/solar-router/solar-router-card.js?v=1
+    - url: /local/solar-router/solar-router-card.js?v=3
+      type: module
+    # Development only: bundles the fixtures so every state of the card is
+    # reachable without a router on the network.
+    - url: /local/solar-router/solar-router-demo.js?v=3
       type: module
 
 logger:
