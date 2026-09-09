@@ -113,6 +113,91 @@ export const cardStyles = css`
     color: var(--warning-color, #ffa600);
   }
 
+  /* Compatibility screens: no controls, one clear thing to do. */
+  .notice {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    align-items: start;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--secondary-background-color, #f5f5f5);
+  }
+
+  .notice ha-icon {
+    grid-row: 1 / span 99;
+    color: var(--primary-color, #03a9f4);
+  }
+
+  .notice p {
+    grid-column: 2;
+    margin: 0 0 8px;
+    line-height: 1.4;
+  }
+
+  .actions {
+    grid-column: 2;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .actions a {
+    color: var(--primary-color, #03a9f4);
+  }
+
+  button.reload,
+  button.link {
+    padding: 6px 12px;
+    border: 1px solid var(--divider-color, #e0e0e0);
+    border-radius: 6px;
+    background: var(--card-background-color, #fff);
+    color: var(--primary-text-color, #212121);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  button.link {
+    margin-top: 8px;
+    border: none;
+    padding: 4px 0;
+    color: var(--primary-color, #03a9f4);
+  }
+
+  /* What the router is made of, now that the firmware says so. */
+  .hardware {
+    margin-top: 12px;
+    display: grid;
+    gap: 4px;
+  }
+
+  .hardware .row {
+    display: grid;
+    grid-template-columns: 9em 1fr;
+    gap: 8px;
+  }
+
+  .hardware .label {
+    color: var(--secondary-text-color, #727272);
+  }
+
+  .modules summary .version {
+    float: right;
+    color: var(--secondary-text-color, #727272);
+    font-size: 0.9em;
+  }
+
+  .entity ha-icon {
+    --mdc-icon-size: 18px;
+    color: var(--state-icon-color, #44739e);
+    margin-right: 4px;
+  }
+
+  @media (max-width: 450px) {
+    .hardware .row {
+      grid-template-columns: 1fr;
+    }
+  }
   @media (max-width: 450px) {
     .entity {
       grid-template-columns: 1fr auto;

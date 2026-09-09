@@ -42,17 +42,42 @@ export interface DeviceEntity {
   entityCategory: "config" | "diagnostic" | null;
 }
 
+export interface DeviceEntities {
+  /** What Home Assistant exposes, and all detection ever looks at. */
+  readonly enabled: DeviceEntity[];
+  /**
+   * Entities the user or the integration disabled.
+   *
+   * Kept rather than dropped so the card can tell "your firmware is old" from
+   * "you disabled the diagnostic entities": the second looks exactly like the
+   * first from the enabled list alone, and the advice differs completely.
+   */
+  readonly disabled: DeviceEntity[];
+}
+
+function toDeviceEntity(entry: EntityRegistryEntry): DeviceEntity {
+  return {
+    entityId: entry.entity_id,
+    domain: entry.entity_id.split(".", 1)[0],
+    originalName: entry.original_name,
+    entityCategory: entry.entity_category,
+  };
+}
+
 export async function loadDeviceEntities(
   hass: HomeAssistant,
   deviceId: string,
-): Promise<DeviceEntity[]> {
+): Promise<DeviceEntities> {
   const registry = await loadEntityRegistry(hass);
-  return registry
-    .filter((entry) => entry.device_id === deviceId && !entry.disabled_by)
-    .map((entry) => ({
-      entityId: entry.entity_id,
-      domain: entry.entity_id.split(".", 1)[0],
-      originalName: entry.original_name,
-      entityCategory: entry.entity_category,
-    }));
+  const enabled: DeviceEntity[] = [];
+  const disabled: DeviceEntity[] = [];
+  for (const entry of registry) {
+    if (entry.device_id !== deviceId) {
+      continue;
+    }
+    // `hidden_by` is deliberately not filtered: hiding a diagnostic entity is
+    // common and must not blind the card.
+    (entry.disabled_by ? disabled : enabled).push(toDeviceEntity(entry));
+  }
+  return { enabled, disabled };
 }
