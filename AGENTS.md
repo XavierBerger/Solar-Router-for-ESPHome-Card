@@ -28,15 +28,48 @@ before starting work — this file is the engineering contract, that one is the 
 | **No backend.** Everything goes through the `hass` object. | A card already has the entity states, the device and entity registries, and `callService`. Staying frontend-only means nothing to install server-side, HACS updates are a single file, and there is no version coupling between card and integration.                                                    |
 | **TypeScript + Lit**                                       | Gives direct access to Home Assistant's own components — `ha-form`, `ha-control-slider`, `ha-selector`, the device picker — so the card inherits HA's theming, accessibility and translations for free, and the GUI editor is a few lines. It is also the stack every HA card contributor already knows. |
 | **One polymorphic card**                                   | One entry in the card picker, one configuration to learn, one page of documentation. The adaptivity lives in the code rather than in the user's YAML.                                                                                                                                                    |
-| **Runtime detection by entity introspection**              | Works with every router already flashed — no package `refresh`, no reflash, no firmware change. A user installs the card and it simply recognises their setup.                                                                                                                                           |
+| **Detection from what the firmware declares**              | Every `solar_router/*.yaml` package publishes a version `text_sensor`, so the card reads the router's composition instead of guessing it. Exact where inference was approximate, and it lifts the three blind spots inference could never resolve. The cost is a package `refresh` and a reflash.        |
 | **English + French**                                       | Matches the bilingual documentation of the firmware project and the francophone community around it.                                                                                                                                                                                                     |
 | **GPL-3.0**                                                | Same licence as the firmware repository. Every npm dependency must be GPL-compatible.                                                                                                                                                                                                                    |
 
 ## The detection contract
 
+Two layers, and conflating them is the mistake to avoid:
+
+| | Question | Mechanism |
+| --- | --- | --- |
+| **Modules** | which packages is this router built from? | **declared** — the firmware says so |
+| **Roles** | which entity is `Router Level`? | **`(domain, original_name)`** |
+
+### Modules — the firmware declares its own composition
+
+Every `solar_router/*.yaml` package ends with a template `text_sensor`, `entity_category:
+diagnostic`, named after the package, publishing a bare semver. In Home Assistant that is a `sensor`
+entity whose `original_name` **is** the package name and whose state is the version. Enumerating them
+gives the router's exact composition — no inference, and the version of each package for free.
+
+**Presence comes from the registry, the version comes from the state.** The lambda has a
+`static bool published` guard, so the sensor publishes once about ten seconds after boot and then
+stays silent: its state is `unknown` until then. Never conclude "old firmware" from a state, only
+from the absence of the entity in the registry. The compatibility verdict has four values —
+`supported`, `outdated`, `not_a_router`, `unknown` — because a device that has never connected is not
+an old router, and refusing to conclude is the right answer.
+
+There is no universal anchor package: `esp8266-proxy-client.yaml` loads no `common.yaml`, and
+`power_meter_common` is missing wherever the leaf merges its common with `<<: !include` rather than
+`packages:` (`power_meter_home_assistant.yaml`, which deliberately overrides `real_power` and
+`consumption`). Test for *at least one* version sensor, never for a particular one, and never warn
+about a missing `*_common`.
+
+Match on the name, with the domain as the only filter. `entity_category` and the semver shape are
+*validators* worth warning about, never gates — gating on the state is exactly the ten-second false
+positive above.
+
+### Roles — `(domain, original_name)`
+
 `AGENTS.md` in the firmware repository declares both the ESPHome `id:` **and** the `name:` of every
-package entity to be public API. The card is built on that promise, which is what makes introspection
-reliable rather than a guess.
+package entity to be public API. The card is built on that promise, which is what makes role
+resolution reliable rather than a guess.
 
 **Match on `(domain, original_name)` — never on the entity id alone, and never on the name alone.**
 
@@ -62,8 +95,12 @@ Assistant source (2026.9.1) rather than assumed:
 Do not swap it for `config/entity_registry/list_for_display`, which is what backs `hass.entities`: its
 compact payload has no `original_name`, and the card would be left guessing from entity ids.
 
-The role→entity table lives in `src/detect/catalog.ts` and is the single source of truth. Keep entity
-names there; do not scatter them across components.
+The role→entity table lives in `src/detect/catalog.ts` and the package table in
+`src/detect/packages.ts`; each is the single source of truth for its axis. Keep entity and package
+names there; do not scatter them across components. Never derive one from the other: the firmware's
+`id:` is `version_` + the file name with `-` replaced by `_`, while its `name:` keeps the file name
+verbatim — `id: version_energy_counter_jsy_mk_194t` for `name: "energy_counter_jsy-mk-194t"`. Match
+names exactly, hyphens and mixed case included (`temperature_limiter_DS18B20`); never slugify them.
 
 ### Rules that follow from the firmware
 
@@ -94,21 +131,26 @@ on real installations rather than only on the happy path.
 10. Schedulers are multi-instance by design. Enumerate them with `^(.*) Scheduler Router Level$` and
     render one collapsible per instance; never hard-code the default `Forced` label.
 
-### What is deliberately left undetected
+### The blind spots are gone
 
-The information does not exist on the Home Assistant side, so the card states what it knows and stays
-silent on the rest rather than guessing:
+Three things used to be undetectable, because the packages involved published nothing that told them
+apart. They now name themselves, and the card can say which regulator drives the load, whether the
+temperature comes from a local DS18B20 or from Home Assistant, and which of the six power meters
+feeds `Real Power`. That is worth more than a label: it is what lets an error message name the
+culprit instead of showing a silent dash.
 
-- **Which regulator.** `regulator_triac`, `regulator_solid_state_relay` and
-  `regulator_mecanical_relay` expose no entity at all. Only the *number* of mechanical relays can be
-  inferred, from the `Relay N Countdown` sensors.
-- **Dallas vs Home Assistant temperature limiter** — both publish an entity named `safety_temperature`,
-  and the controls are identical either way, so nothing is lost.
-- **Fronius vs proxy client vs Home Assistant power meter** — all converge on `Real Power` /
-  `Consumption`, which is exactly what the card displays.
+Two traps come with it:
 
-If exact identification becomes valuable, the clean fix is upstream (`esphome: project:` in
-`common.yaml`), not a cleverer heuristic here.
+- **Regulators are a list, never a value.** `esp8266-proxy-client.yaml` loads a solid-state relay
+  *and* a mechanical one; `esp32-standalone_1dimmer_2switches_1bypass.yaml` a triac *and* three
+  mechanical relays.
+- **The number of mechanical relays is not the number of `Relay N Countdown` sensors.** Two
+  quantities, two fields. `esp8266-proxy-client.yaml` loads a mechanical relay while
+  `engine_1dimmer_1bypass` publishes no countdown at all.
+
+What stays out of reach is the identity of the installed release: the sensors give a version *per
+package*, and since a release only bumps the packages it touched, `max(versions)` is a lower bound,
+never the release. An `esphome: project:` upstream would answer that; the card does not need it.
 
 ## Home Assistant integration rules
 
@@ -131,8 +173,13 @@ Four levels. State plainly which ones you ran, and never report a level you skip
 
 1. **Unit** — `npm test` (Vitest). Detection against the fixtures in `test/fixtures/`, one per real
    module combination taken from the firmware repository's root configs, plus an offline
-   (`unavailable`) device. Negative cases are part of the suite: `Regulator Opening` as sensor vs
-   number, the `Start tempo` number/sensor pair, a proxy device with no engine, a non-router device.
+   (`unavailable`) device. Negative cases are part of the suite. On roles: `Regulator Opening` as
+   sensor vs number, the `Start tempo` number/sensor pair, `Regulator Opening` absent altogether. On
+   packages: `regulator_mecanical_relay_` with an empty instance suffix, three relay instances,
+   `temperature_limiter_DS18B20`'s mixed case, `power_meter_common` missing behind a `<<: !include`,
+   two `engine_*` packages, a proxy with no engine, and the four compatibility verdicts — including
+   the two that must never regress to `outdated`: every state `unavailable`, and every version still
+   `unknown` ten seconds after boot.
 2. **Render** — Vitest + `@open-wc/testing-helpers`: mount with each fixture, assert that irrelevant
    sections are absent and that a missing entity never throws.
 3. **Browser under Home Assistant** — `dev/dev-up.sh`, then Playwright against
