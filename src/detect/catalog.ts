@@ -10,17 +10,13 @@
  *   correcting either would stop matching every installation in the field.
  * - When the firmware adds a package, this file is what needs extending — the
  *   detection algorithm in `detect.ts` stays as it is.
+ *
+ * This table answers "which entity is the router level on this device". Which
+ * packages the device runs is a different question, answered by `packages.ts`
+ * from what the firmware declares.
  */
 
-import type {
-  Domain,
-  EngineId,
-  ModuleId,
-  Role,
-  RoleDefinition,
-  SchedulerRole,
-  SchedulerRoleDefinition,
-} from "./types";
+import type { Domain, Role, RoleDefinition, SchedulerRole, SchedulerRoleDefinition } from "./types";
 
 /**
  * `Record<Role, …>` on purpose: adding a role to the union without describing
@@ -598,75 +594,3 @@ export const SCHEDULER_ANCHOR: {
   namePattern: /^(.+) Scheduler Router Level$/,
   slugPattern: /^(.+)_scheduler_router_level$/,
 };
-
-/**
- * Engine signatures, most specific first — the first that matches wins.
- *
- * The order carries information: `engine_1dimmer_2switches` also publishes
- * `Target grid exchange`, so the generic dimmer test has to come last, and
- * `Relay 3 Countdown` only exists on the bypass variant, so it comes first.
- * None of these signals is hidden by a substitution, which is what makes the
- * whole thing dependable.
- */
-export const ENGINE_SIGNATURES: readonly {
-  readonly engine: EngineId;
-  readonly allOf: readonly Role[];
-}[] = [
-  { engine: "engine_1dimmer_2switches_1bypass", allOf: ["relay_3_countdown"] },
-  { engine: "engine_1dimmer_2switches", allOf: ["relay_1_countdown", "relay_2_countdown"] },
-  { engine: "engine_1dimmer_1bypass", allOf: ["bypass_relay"] },
-  { engine: "engine_1switch", allOf: ["start_power_level"] },
-  { engine: "engine_1dimmer", allOf: ["target_grid_exchange"] },
-];
-
-/** Module signatures. `allOf` roles must all be present, `anyOf` at least one. */
-export const MODULE_SIGNATURES: readonly {
-  readonly module: ModuleId;
-  readonly allOf?: readonly Role[];
-  readonly anyOf?: readonly Role[];
-}[] = [
-  { module: "power_meter", allOf: ["real_power"] },
-  { module: "energy_counter_theorical", allOf: ["total_energy_diverted", "load_power"] },
-  { module: "energy_counter_jsy-mk-194t", allOf: ["total_daily_energy_diverted"] },
-  {
-    module: "temperature_limiter",
-    allOf: [
-      "safety_temperature",
-      "safety_limit_reached",
-      "stop_temperature",
-      "restart_temperature",
-    ],
-  },
-  { module: "temperature_fan_control", allOf: ["fan_start_temperature", "fan_stop_temperature"] },
-  { module: "power_meter_shelly_em3", allOf: ["em3_phase_a_power"] },
-  {
-    // Any un-hidden channel proves the package is loaded. All of them are
-    // `internal: "true"` by default, so this module is only ever detected on a
-    // device whose owner exposed a channel — there is no signal otherwise.
-    module: "jsy-mk-194t_common",
-    anyOf: (Object.keys(CATALOG) as Role[]).filter(
-      (role) => CATALOG[role].owner === "jsy-mk-194t_common",
-    ),
-  },
-  { module: "common", allOf: ["restart", "uptime"] },
-  { module: "debug_sensors", allOf: ["device_info", "free_psram"] },
-];
-
-/** Display order of the recognised modules, so the summary is stable. */
-export const MODULE_ORDER: readonly ModuleId[] = [
-  "power_meter",
-  "power_meter_shelly_em3",
-  "jsy-mk-194t_common",
-  "engine_1dimmer",
-  "engine_1dimmer_1bypass",
-  "engine_1dimmer_2switches",
-  "engine_1dimmer_2switches_1bypass",
-  "engine_1switch",
-  "energy_counter_theorical",
-  "energy_counter_jsy-mk-194t",
-  "temperature_limiter",
-  "temperature_fan_control",
-  "scheduler_forced_run",
-  "common",
-  "debug_sensors",
-];

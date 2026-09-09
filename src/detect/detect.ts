@@ -9,23 +9,18 @@
  * makes the fixtures of `test/fixtures/` enough to test it.
  */
 
-import {
-  CATALOG,
-  ENGINE_SIGNATURES,
-  MODULE_ORDER,
-  MODULE_SIGNATURES,
-  SCHEDULER_ANCHOR,
-  SCHEDULER_CATALOG,
-  schedulerEntityName,
-} from "./catalog";
+import { CATALOG, SCHEDULER_ANCHOR, SCHEDULER_CATALOG, schedulerEntityName } from "./catalog";
+import { PACKAGES, collectDeclaredPackages, compareVersions } from "./packages";
 import type { DeviceEntity } from "./registry";
 import {
   isWritableDomain,
+  type DeclaredPackage,
   type DetectionWarning,
   type DeviceKind,
   type Domain,
   type EngineId,
-  type ModuleId,
+  type FirmwareSupport,
+  type PackageId,
   type ResolvedRole,
   type Role,
   type RouterProfile,
@@ -40,6 +35,15 @@ export interface DetectOptions {
    * wins over what was detected.
    */
   readonly overrides?: Readonly<Record<string, string>>;
+  /**
+   * Entity states, used only to read the version each package declares.
+   *
+   * Optional on purpose. Which packages exist is a registry fact; omitting the
+   * states yields the same package list with every version still `pending`,
+   * which is what lets the profile be computed once per device instead of on
+   * every state change — `Real Power` alone ticks once a second.
+   */
+  readonly states?: Readonly<Record<string, { readonly state: string }>>;
 }
 
 /**
@@ -229,37 +233,29 @@ function detectSchedulers(index: EntityIndex): SchedulerInstance[] {
     });
 }
 
-function detectEngine(roles: Partial<Record<Role, ResolvedRole>>): EngineId | null {
-  for (const signature of ENGINE_SIGNATURES) {
-    if (signature.allOf.every((role) => roles[role])) {
-      return signature.engine;
-    }
-  }
-  return null;
-}
+/** Engine leaves, most specific first, to settle a build that declares two. */
+const ENGINE_SPECIFICITY: readonly EngineId[] = [
+  "engine_1dimmer_2switches_1bypass",
+  "engine_1dimmer_2switches",
+  "engine_1dimmer_1bypass",
+  "engine_1switch",
+  "engine_1dimmer",
+];
 
-function detectModules(
-  roles: Partial<Record<Role, ResolvedRole>>,
-  engine: EngineId | null,
-  schedulers: readonly SchedulerInstance[],
-): ModuleId[] {
-  const found = new Set<ModuleId>();
-
-  for (const signature of MODULE_SIGNATURES) {
-    const allOf = signature.allOf?.every((role) => roles[role]) ?? true;
-    const anyOf = signature.anyOf?.some((role) => roles[role]) ?? true;
-    if (allOf && anyOf) {
-      found.add(signature.module);
-    }
-  }
-  if (engine) {
-    found.add(engine);
-  }
-  if (schedulers.length > 0) {
-    found.add("scheduler_forced_run");
-  }
-
-  return MODULE_ORDER.filter((module) => found.has(module));
+/**
+ * The engine, read from the declared packages.
+ *
+ * `engine_common` travels with every leaf and is therefore never the answer.
+ * Two leaves at once cannot happen on a build that compiles, but a hand-rolled
+ * config can produce one, so pick deterministically rather than by whichever
+ * came first in the entity list.
+ */
+function engineFromPackages(declares: ReadonlySet<PackageId>): {
+  readonly engine: EngineId | null;
+  readonly conflicting: readonly EngineId[];
+} {
+  const found = ENGINE_SPECIFICITY.filter((id) => declares.has(id));
+  return { engine: found[0] ?? null, conflicting: found.length > 1 ? found : [] };
 }
 
 export function detectRouter(
@@ -301,22 +297,61 @@ export function detectRouter(
     }
   }
 
-  // What the device is comes before which engine it runs: a power meter proxy
-  // publishes `Real Power` and no engine at all, and gets a reduced card
-  // rather than an error.
-  const kind: DeviceKind = roles.activate ? "router" : roles.real_power ? "power_meter" : "unknown";
+  const packages = collectDeclaredPackages(entities, options.states);
+  const declares = new Set<PackageId>(packages.map((declared) => declared.id));
 
-  const engine = kind === "router" ? detectEngine(roles) : null;
-  if (kind === "router" && !engine) {
-    warnings.push({ code: "engine_unknown" });
+  for (const declared of packages) {
+    if (declared.versionState === "unexpected") {
+      warnings.push({ code: "version_format_unexpected", entityId: declared.entityId });
+    }
   }
 
-  const schedulers = detectSchedulers(index);
-  const modules = detectModules(roles, engine, schedulers);
+  // A package name that only differs by case is a firmware typo. Say so rather
+  // than silently ignoring the entity, which would look like a missing module.
+  const known = new Map(Object.keys(PACKAGES).map((id) => [id.toLowerCase(), id]));
+  for (const entity of entities) {
+    const name = entity.originalName?.trim();
+    if (
+      !name ||
+      entity.domain !== "sensor" ||
+      Object.prototype.hasOwnProperty.call(PACKAGES, name)
+    ) {
+      continue;
+    }
+    const canonical = known.get(name.toLowerCase());
+    if (canonical) {
+      warnings.push({ code: "version_name_case_mismatch", name });
+    }
+  }
 
-  const mechanicalRelays = (
+  const { engine, conflicting } = engineFromPackages(declares);
+  if (conflicting.length > 0) {
+    warnings.push({ code: "multiple_engines", engines: conflicting });
+  } else if (!engine && declares.has("engine_common")) {
+    warnings.push({ code: "engine_leaf_missing" });
+  } else if (!engine && packages.length > 0 && roles.activate) {
+    warnings.push({ code: "engine_not_declared" });
+  }
+
+  // What the device is, from what it declares rather than from what it happens
+  // to publish: a proxy that is offline is still a power meter.
+  const hasMeter = packages.some(
+    (declared) =>
+      PACKAGES[declared.id].category === "power_meter" && !PACKAGES[declared.id].implicit,
+  );
+  const kind: DeviceKind = engine ? "router" : hasMeter ? "power_meter" : "unknown";
+
+  const schedulers = detectSchedulers(index);
+
+  const regulators = packages.filter((declared) => PACKAGES[declared.id].category === "regulator");
+  const mechanicalRelays = packages.filter(
+    (declared) => declared.id === "regulator_mecanical_relay",
+  ).length;
+  const relayCountdowns = (
     ["relay_1_countdown", "relay_2_countdown", "relay_3_countdown"] as const
   ).filter((role) => roles[role]).length;
+
+  const firmware = firmwareSupport(entities, packages, roles);
 
   const claimed = new Set<string>();
   for (const resolved of Object.values(roles)) {
@@ -327,16 +362,64 @@ export function detectRouter(
       claimed.add(resolved.entityId);
     }
   }
+  // The version sensors are accounted for, so they must not resurface in the
+  // generic rendering of leftovers.
+  for (const declared of packages) {
+    claimed.add(declared.entityId);
+  }
 
   return {
     deviceId,
+    firmware,
     kind,
     engine,
-    modules,
+    packages,
+    declares,
+    regulators,
     roles,
     schedulers,
     mechanicalRelays,
+    relayCountdowns,
+    packagesVersion: highestVersion(packages),
     unclaimed: entities.map((entity) => entity.entityId).filter((id) => !claimed.has(id)),
     warnings,
   };
+}
+
+/** The highest version declared, or `null` if none has published yet. */
+function highestVersion(packages: readonly DeclaredPackage[]): string | null {
+  let best: string | null = null;
+  for (const declared of packages) {
+    if (!declared.version) {
+      continue;
+    }
+    if (!best || compareVersions(declared.version, best) === 1) {
+      best = declared.version;
+    }
+  }
+  return best;
+}
+
+/**
+ * Can the card work with this device?
+ *
+ * Only the registry is consulted, never a state. The version sensors publish
+ * once about ten seconds after boot, so a card that asked "is the state a
+ * semver?" would greet every freshly booted router with an upgrade notice.
+ */
+function firmwareSupport(
+  entities: readonly DeviceEntity[],
+  packages: readonly DeclaredPackage[],
+  roles: Partial<Record<Role, ResolvedRole>>,
+): FirmwareSupport {
+  if (packages.length > 0) {
+    return "supported";
+  }
+  if (entities.length === 0) {
+    // Nothing in the registry yet — a device that has never connected, or a
+    // cache read too early. Not an old router; do not guess.
+    return "unknown";
+  }
+  const anchors = ["activate", "real_power", "router_level", "consumption"] as const;
+  return anchors.some((role) => roles[role]) ? "outdated" : "not_a_router";
 }

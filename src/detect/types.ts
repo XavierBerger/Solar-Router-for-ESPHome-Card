@@ -32,34 +32,120 @@ export type EngineId =
   | "engine_1switch";
 
 /**
- * A firmware package the card can recognise.
+ * A firmware package, named exactly as its `solar_router/*.yaml` file.
  *
- * `temperature_limiter` covers both `temperature_limiter_DS18B20` and
- * `temperature_limiter_home_assistant`: they publish the same entities, and the
- * controls are identical, so the distinction would be invisible anyway.
- * `power_meter` likewise covers fronius / proxy_client / home_assistant /
- * shelly_em / jsy — they all converge on `Real Power` and `Consumption`.
+ * Each literal is what that package's version `text_sensor` publishes in
+ * `name:`, so this union *is* the detection key. Hyphens and mixed case are
+ * part of it (`energy_counter_jsy-mk-194t`, `temperature_limiter_DS18B20`) —
+ * never normalise them.
  */
-export type ModuleId =
+export type PackageId =
   | EngineId
   | "common"
   | "debug_sensors"
   | "energy_counter_jsy-mk-194t"
   | "energy_counter_theorical"
+  | "engine_common"
   | "jsy-mk-194t_common"
-  | "power_meter"
+  | "power_meter_common"
+  | "power_meter_fronius"
+  | "power_meter_home_assistant"
+  | "power_meter_jsy-mk-194t"
+  | "power_meter_proxy_client"
+  | "power_meter_shelly_em"
   | "power_meter_shelly_em3"
+  | "regulator_mecanical_relay"
+  | "regulator_solid_state_relay"
+  | "regulator_triac"
   | "scheduler_forced_run"
   | "temperature_fan_control"
-  | "temperature_limiter";
+  | "temperature_limiter_DS18B20"
+  | "temperature_limiter_common"
+  | "temperature_limiter_home_assistant";
+
+/** How the summary groups packages, and the order it shows them in. */
+export type PackageCategory =
+  | "power_meter"
+  | "engine"
+  | "regulator"
+  | "energy_counter"
+  | "temperature"
+  | "scheduler"
+  | "system";
+
+/** What the catalogue knows about one package. See `packages.ts`. */
+export interface PackageDefinition {
+  readonly category: PackageCategory;
+  /** English fallback; phase 3 translates under the key `package.<id>`. */
+  readonly label: string;
+  /** Icon for the summary. */
+  readonly icon: string;
+  /**
+   * Pulled in by another package rather than chosen by the user
+   * (`engine_common`, `power_meter_common`, `temperature_limiter_common`).
+   * Folded away behind "internal packages" in the summary.
+   */
+  readonly implicit?: boolean;
+  /**
+   * Can be loaded more than once, its `name:` carrying a `_${unique_id}`
+   * suffix. That suffix may be empty: `relay_unique_id` defaults to `""`, so
+   * one mechanical relay publishes `regulator_mecanical_relay_`.
+   */
+  readonly multiInstance?: boolean;
+  /**
+   * Its version sensor can be missing while the package *is* loaded, so its
+   * absence proves nothing and must never be reported. See the comment on
+   * `power_meter_common` in `packages.ts`.
+   */
+  readonly unreliablePresence?: boolean;
+}
+
+/** How much is known about a package's version. Never a reason to reject it. */
+export type VersionState =
+  /** A bare semver was read. */
+  | "known"
+  /** `unknown`: the sensor publishes once, about ten seconds after boot. */
+  | "pending"
+  /** `unavailable`: the device is offline. */
+  | "unavailable"
+  /** The state exists but is not a bare semver — the firmware changed format. */
+  | "unexpected";
+
+/** One package a device declares, and the version it declares for it. */
+export interface DeclaredPackage {
+  readonly id: PackageId;
+  /** `""` unless multi-instance with a non-empty id: `"1"`, `"2"`, `"Forced"`. */
+  readonly instance: string;
+  /** `original_name` verbatim, e.g. `regulator_mecanical_relay_2`. */
+  readonly declaredName: string;
+  readonly entityId: string;
+  readonly version: string | null;
+  readonly versionState: VersionState;
+}
+
+/**
+ * Whether the card can work with this device.
+ *
+ * Four values rather than two: a device that has never connected is not an
+ * outdated router, and refusing to conclude is the right answer.
+ */
+export type FirmwareSupport =
+  /** At least one package declares itself. */
+  | "supported"
+  /** No package, but the roles say this is a router — old firmware. */
+  | "outdated"
+  /** No package and no role: some other ESPHome device. */
+  | "not_a_router"
+  /** No entity at all in the registry yet. */
+  | "unknown";
 
 /**
  * Which family of packages publishes a role.
  *
- * Coarser than `ModuleId` on purpose: `Activate Solar Routing` is declared by
+ * Coarser than `PackageId` on purpose: `Activate Solar Routing` is declared by
  * all five engines and `Power divertion` by both energy counters, so naming one
- * of them would be false precision. This field is informational — the
- * authoritative role → module mapping is `MODULE_SIGNATURES` in `catalog.ts`.
+ * of them would be false precision. Informational only — which packages a
+ * device runs is declared, not deduced from roles.
  */
 export type RoleOwner =
   | "engine"
@@ -215,7 +301,8 @@ export interface RoleDefinition {
    * The entity does not exist with the package's default substitutions — the
    * firmware wires its `internal:` to `hide_regulators`, `hide_leds` or one of
    * the JSY `*_internal`, all of which default to hiding. Its absence
-   * therefore says nothing about the device, so it is a poor detection signal.
+   * therefore says nothing: the card must not present it as missing, and must
+   * not alert on it.
    *
    * Two nearby traps that this flag does *not* cover, because the defaults go
    * the other way: `Consumption` is visible in `power_meter_common` but hidden
@@ -280,8 +367,16 @@ export type DeviceKind = "router" | "power_meter" | "unknown";
  * parsing English back.
  */
 export type DetectionWarning =
-  /** A router (it has `Activate Solar Routing`) whose engine no signature matched. */
-  | { readonly code: "engine_unknown" }
+  /** Packages are declared, `engine_common` among them, but no engine leaf is. */
+  | { readonly code: "engine_leaf_missing" }
+  /** The roles say this is a router, yet no engine package declares itself. */
+  | { readonly code: "engine_not_declared" }
+  /** Two engine leaves at once — impossible on a sound build, so worth saying. */
+  | { readonly code: "multiple_engines"; readonly engines: readonly EngineId[] }
+  /** A version sensor whose state is not a bare semver. See `VersionState`. */
+  | { readonly code: "version_format_unexpected"; readonly entityId: string }
+  /** A package name that differs from a catalogue entry only by case. */
+  | { readonly code: "version_name_case_mismatch"; readonly name: string }
   /** `entities:` names a role the catalog does not have — a typo, most likely. */
   | { readonly code: "override_unknown_role"; readonly key: string }
   /** An override points at an entity that is not on this device. Allowed, but worth saying. */
@@ -289,19 +384,38 @@ export type DetectionWarning =
 
 export interface RouterProfile {
   readonly deviceId: string;
+  /** Whether the card can work with this device at all. Check it first. */
+  readonly firmware: FirmwareSupport;
   readonly kind: DeviceKind;
-  /** Null on a proxy, and on a router whose engine no signature matched. */
+  /** Null on a proxy, and on a device declaring no engine leaf. */
   readonly engine: EngineId | null;
-  readonly modules: readonly ModuleId[];
+  /** Every package the device declares, in display order. */
+  readonly packages: readonly DeclaredPackage[];
+  /** The same set, for an O(1) membership test from the sections. */
+  readonly declares: ReadonlySet<PackageId>;
+  /** The regulators driving the load — a list, never a single value. */
+  readonly regulators: readonly DeclaredPackage[];
   readonly roles: Partial<Record<Role, ResolvedRole>>;
   readonly schedulers: readonly SchedulerInstance[];
   /**
-   * Number of `Relay N Countdown` sensors found. The only thing the firmware
-   * lets us know about the regulators — which flavour is in use is invisible
-   * from Home Assistant.
+   * How many `regulator_mecanical_relay` instances are declared.
+   *
+   * Not the same thing as `relayCountdowns`: `esp8266-proxy-client.yaml` loads
+   * a mechanical relay while its `engine_1dimmer_1bypass` publishes no
+   * countdown at all.
    */
   readonly mechanicalRelays: number;
-  /** Entities no role claimed, for the generic rendering of an unknown engine. */
+  /** Number of `Relay N Countdown` sensors the engine publishes. */
+  readonly relayCountdowns: number;
+  /**
+   * Highest version among the declared packages.
+   *
+   * A *lower bound* on the installed release, never the release itself: a
+   * release only bumps the packages it touched, so at tag v1.6.7 a plain
+   * dimmer router declares nothing above 1.6.6. Label it `≥`.
+   */
+  readonly packagesVersion: string | null;
+  /** Entities no role and no package claimed, for generic rendering. */
   readonly unclaimed: readonly string[];
   /** Facts worth telling the user in the editor, not exceptions. */
   readonly warnings: readonly DetectionWarning[];
