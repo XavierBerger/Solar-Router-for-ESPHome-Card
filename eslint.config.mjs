@@ -6,9 +6,11 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ["src/**/*.ts"],
+    // `tsconfig.test.json` covers both trees: `tsconfig.json` includes only
+    // `src`, so type-aware linting would refuse every file under `test`.
+    files: ["src/**/*.ts", "test/**/*.ts"],
     languageOptions: {
-      parserOptions: { project: "./tsconfig.json" },
+      parserOptions: { project: "./tsconfig.test.json" },
     },
     rules: {
       "@typescript-eslint/consistent-type-imports": "error",
