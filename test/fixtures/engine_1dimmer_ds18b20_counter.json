@@ -1,0 +1,313 @@
+{
+  "device": {
+    "id": "dev_engine_1dimmer_ds18b20_counter",
+    "name": "solarrouter",
+    "sw_version": "2026.8.2"
+  },
+  "entities": [
+    {
+      "entity_id": "binary_sensor.solarrouter_safety_limit_reached",
+      "domain": "binary_sensor",
+      "original_name": "Safety limit reached",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.solarrouter_down_reactivity",
+      "domain": "number",
+      "original_name": "Down Reactivity",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.solarrouter_load_power",
+      "domain": "number",
+      "original_name": "Load power",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.solarrouter_restart_temperature",
+      "domain": "number",
+      "original_name": "Restart temperature",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.solarrouter_router_level",
+      "domain": "number",
+      "original_name": "Router Level",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.solarrouter_stop_temperature",
+      "domain": "number",
+      "original_name": "Stop temperature",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.solarrouter_target_grid_exchange",
+      "domain": "number",
+      "original_name": "Target grid exchange",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.solarrouter_up_reactivity",
+      "domain": "number",
+      "original_name": "Up Reactivity",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_consumption",
+      "domain": "sensor",
+      "original_name": "Consumption",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_power_divertion",
+      "domain": "sensor",
+      "original_name": "Power divertion",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_real_power",
+      "domain": "sensor",
+      "original_name": "Real Power",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_total_energy_diverted",
+      "domain": "sensor",
+      "original_name": "Total energy diverted",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_uptime_sensor",
+      "domain": "sensor",
+      "original_name": "Uptime Sensor",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_common",
+      "domain": "sensor",
+      "original_name": "common",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.1.1",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_energy_counter_theorical",
+      "domain": "sensor",
+      "original_name": "energy_counter_theorical",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.3",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_engine_1dimmer",
+      "domain": "sensor",
+      "original_name": "engine_1dimmer",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.6",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_engine_common",
+      "domain": "sensor",
+      "original_name": "engine_common",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.6",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_power_meter_common",
+      "domain": "sensor",
+      "original_name": "power_meter_common",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.4",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_power_meter_fronius",
+      "domain": "sensor",
+      "original_name": "power_meter_fronius",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.3",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_regulator_triac",
+      "domain": "sensor",
+      "original_name": "regulator_triac",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.3",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_safety_temperature",
+      "domain": "sensor",
+      "original_name": "safety_temperature",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_temperature_limiter_ds18b20",
+      "domain": "sensor",
+      "original_name": "temperature_limiter_DS18B20",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.4.1",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_temperature_limiter_common",
+      "domain": "sensor",
+      "original_name": "temperature_limiter_common",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.7",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "switch.solarrouter_activate_solar_routing",
+      "domain": "switch",
+      "original_name": "Activate Solar Routing",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.solarrouter_restart",
+      "domain": "switch",
+      "original_name": "Restart",
+      "name": null,
+      "entity_category": "config",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.solarrouter_used_for_cooling",
+      "domain": "switch",
+      "original_name": "Used for cooling",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    }
+  ]
+}

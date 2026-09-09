@@ -1,0 +1,269 @@
+{
+  "device": {
+    "id": "dev_engine_1dimmer_2switches_1bypass",
+    "name": "solarrouter-2s1b",
+    "sw_version": "2026.8.2"
+  },
+  "entities": [
+    {
+      "entity_id": "number.solarrouter_2s1b_bypass_tempo",
+      "domain": "number",
+      "original_name": "Bypass tempo",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.solarrouter_2s1b_down_reactivity",
+      "domain": "number",
+      "original_name": "Down Reactivity",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.solarrouter_2s1b_router_level",
+      "domain": "number",
+      "original_name": "Router Level",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.solarrouter_2s1b_target_grid_exchange",
+      "domain": "number",
+      "original_name": "Target grid exchange",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.solarrouter_2s1b_up_reactivity",
+      "domain": "number",
+      "original_name": "Up Reactivity",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_consumption",
+      "domain": "sensor",
+      "original_name": "Consumption",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_real_power",
+      "domain": "sensor",
+      "original_name": "Real Power",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_relay_1_countdown",
+      "domain": "sensor",
+      "original_name": "Relay 1 Countdown",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_relay_2_countdown",
+      "domain": "sensor",
+      "original_name": "Relay 2 Countdown",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_relay_3_countdown",
+      "domain": "sensor",
+      "original_name": "Relay 3 Countdown",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_uptime_sensor",
+      "domain": "sensor",
+      "original_name": "Uptime Sensor",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_common",
+      "domain": "sensor",
+      "original_name": "common",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.1.1",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_engine_1dimmer_2switches_1bypass",
+      "domain": "sensor",
+      "original_name": "engine_1dimmer_2switches_1bypass",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.3",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_engine_common",
+      "domain": "sensor",
+      "original_name": "engine_common",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.6",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_power_meter_common",
+      "domain": "sensor",
+      "original_name": "power_meter_common",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.4",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_power_meter_fronius",
+      "domain": "sensor",
+      "original_name": "power_meter_fronius",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.3",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_regulator_mecanical_relay_1",
+      "domain": "sensor",
+      "original_name": "regulator_mecanical_relay_1",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.2",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_regulator_mecanical_relay_2",
+      "domain": "sensor",
+      "original_name": "regulator_mecanical_relay_2",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.2",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_regulator_mecanical_relay_3",
+      "domain": "sensor",
+      "original_name": "regulator_mecanical_relay_3",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.2",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.solarrouter_2s1b_regulator_triac",
+      "domain": "sensor",
+      "original_name": "regulator_triac",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.3",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "switch.solarrouter_2s1b_activate_solar_routing",
+      "domain": "switch",
+      "original_name": "Activate Solar Routing",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.solarrouter_2s1b_restart",
+      "domain": "switch",
+      "original_name": "Restart",
+      "name": null,
+      "entity_category": "config",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    }
+  ]
+}

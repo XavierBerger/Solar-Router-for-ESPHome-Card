@@ -1,0 +1,92 @@
+{
+  "device": {
+    "id": "dev_proxy_only",
+    "name": "esp8285",
+    "sw_version": "2026.8.2"
+  },
+  "entities": [
+    {
+      "entity_id": "sensor.esp8285_consumption",
+      "domain": "sensor",
+      "original_name": "Consumption",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.esp8285_real_power",
+      "domain": "sensor",
+      "original_name": "Real Power",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.esp8285_uptime_sensor",
+      "domain": "sensor",
+      "original_name": "Uptime Sensor",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.esp8285_common",
+      "domain": "sensor",
+      "original_name": "common",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.1.1",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.esp8285_power_meter_common",
+      "domain": "sensor",
+      "original_name": "power_meter_common",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.4",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.esp8285_power_meter_shelly_em",
+      "domain": "sensor",
+      "original_name": "power_meter_shelly_em",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.3",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "switch.esp8285_restart",
+      "domain": "switch",
+      "original_name": "Restart",
+      "name": null,
+      "entity_category": "config",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    }
+  ]
+}

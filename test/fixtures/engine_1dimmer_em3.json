@@ -1,0 +1,208 @@
+{
+  "device": {
+    "id": "dev_engine_1dimmer_em3",
+    "name": "em3-router",
+    "sw_version": "2026.8.2"
+  },
+  "entities": [
+    {
+      "entity_id": "number.em3_router_down_reactivity",
+      "domain": "number",
+      "original_name": "Down Reactivity",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.em3_router_router_level",
+      "domain": "number",
+      "original_name": "Router Level",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.em3_router_target_grid_exchange",
+      "domain": "number",
+      "original_name": "Target grid exchange",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.em3_router_up_reactivity",
+      "domain": "number",
+      "original_name": "Up Reactivity",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.em3_router_em3_phase_a_active_power",
+      "domain": "sensor",
+      "original_name": "EM3 Phase A Active Power",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.em3_router_em3_phase_b_active_power",
+      "domain": "sensor",
+      "original_name": "EM3 Phase B Active Power",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.em3_router_em3_phase_c_active_power",
+      "domain": "sensor",
+      "original_name": "EM3 Phase C Active Power",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.em3_router_real_power",
+      "domain": "sensor",
+      "original_name": "Real Power",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.em3_router_uptime_sensor",
+      "domain": "sensor",
+      "original_name": "Uptime Sensor",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.em3_router_common",
+      "domain": "sensor",
+      "original_name": "common",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.1.1",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.em3_router_engine_1dimmer",
+      "domain": "sensor",
+      "original_name": "engine_1dimmer",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.6",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.em3_router_engine_common",
+      "domain": "sensor",
+      "original_name": "engine_common",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.6",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.em3_router_power_meter_common",
+      "domain": "sensor",
+      "original_name": "power_meter_common",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.4",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.em3_router_power_meter_shelly_em3",
+      "domain": "sensor",
+      "original_name": "power_meter_shelly_em3",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.6",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "sensor.em3_router_regulator_triac",
+      "domain": "sensor",
+      "original_name": "regulator_triac",
+      "name": null,
+      "entity_category": "diagnostic",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "1.6.3",
+      "attributes": {
+        "icon": "mdi:tag-outline"
+      }
+    },
+    {
+      "entity_id": "switch.em3_router_activate_solar_routing",
+      "domain": "switch",
+      "original_name": "Activate Solar Routing",
+      "name": null,
+      "entity_category": null,
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.em3_router_restart",
+      "domain": "switch",
+      "original_name": "Restart",
+      "name": null,
+      "entity_category": "config",
+      "disabled_by": null,
+      "hidden_by": null,
+      "state": "unknown",
+      "attributes": {}
+    }
+  ]
+}
