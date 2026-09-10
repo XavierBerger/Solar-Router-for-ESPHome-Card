@@ -41,13 +41,13 @@ name: Water heater          # optional, overrides the title
 advanced_open: false        # optional, initial state of the Advanced section
 ```
 
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `device_id` | string | — | Device registry id of the router. |
-| `name` | string | device name | Card title. |
-| `advanced_open` | boolean | `false` | Whether the Advanced section starts open. |
-| `sections` | map | `auto` | Per-section `auto` / `show` / `hide` override. |
-| `entities` | map | `{}` | Role → `entity_id` override for installations detection cannot resolve. |
+| Option          | Type    | Default     | Description                                                             |
+| --------------- | ------- | ----------- | ----------------------------------------------------------------------- |
+| `device_id`     | string  | —           | Device registry id of the router.                                       |
+| `name`          | string  | device name | Card title.                                                             |
+| `advanced_open` | boolean | `false`     | Whether the Advanced section starts open.                               |
+| `sections`      | map     | `auto`      | Per-section `auto` / `show` / `hide` override.                          |
+| `entities`      | map     | `{}`        | Role → `entity_id` override for installations detection cannot resolve. |
 
 ## Development
 
@@ -64,6 +64,10 @@ does. Home Assistant caches `/local/` for a month, so bump `?v=` in
 `dev/homeassistant/config/configuration.yaml` when a rebuild does not show up.
 
 Engineering rules are in [`AGENTS.md`](AGENTS.md); the design and roadmap in [`plan/PLAN.md`](plan/PLAN.md).
+
+## Transparency about AI-Assisted Development
+
+This card was developed with the assistance of an AI coding assistant, closely coached and supervised by an experienced developer. Particular attention was given to the software architecture, code quality, maintainability, and test coverage, with the goal of ensuring a robust and well-engineered codebase.
 
 ## Licence
 
