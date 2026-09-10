@@ -15,16 +15,16 @@ réglages fins et les diagnostics.
 
 Décisions arrêtées :
 
-| Sujet | Décision |
-|---|---|
-| Dépôt | `hacf-fr/Solar-Router-for-ESPHome-Card`, élément `custom:solar-router-card` |
-| Backend | **aucun** — tout passe par l'objet `hass`. Rien à installer côté serveur, mise à jour HACS en un fichier, aucun couplage de version entre la carte et une intégration |
-| Stack | **TypeScript + Lit**, composants HA natifs (`ha-form`, `ha-control-slider`, `ha-selector`, device picker) : thème, accessibilité et traductions hérités gratuitement |
-| Découpage | **une seule carte polymorphe** — une entrée dans le sélecteur, une configuration à comprendre |
-| Détection | **déclarative** — chaque paquet du firmware publie un capteur de version, la carte les lit. Exige un `refresh` de package et un reflash |
-| Langues | **anglais + français**, choix automatique d'après le profil HA, repli anglais |
-| Dev/test | **Docker HA + fixtures + Playwright** |
-| Licence | **GPL-3.0**, comme le dépôt firmware |
+| Sujet     | Décision                                                                                                                                                              |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dépôt     | `hacf-fr/Solar-Router-for-ESPHome-Card`, élément `custom:solar-router-card`                                                                                           |
+| Backend   | **aucun** — tout passe par l'objet `hass`. Rien à installer côté serveur, mise à jour HACS en un fichier, aucun couplage de version entre la carte et une intégration |
+| Stack     | **TypeScript + Lit**, composants HA natifs (`ha-form`, `ha-control-slider`, `ha-selector`, device picker) : thème, accessibilité et traductions hérités gratuitement  |
+| Découpage | **une seule carte polymorphe** — une entrée dans le sélecteur, une configuration à comprendre                                                                         |
+| Détection | **déclarative** — chaque paquet du firmware publie un capteur de version, la carte les lit. Exige un `refresh` de package et un reflash                               |
+| Langues   | **anglais + français**, choix automatique d'après le profil HA, repli anglais                                                                                         |
+| Dev/test  | **Docker HA + fixtures + Playwright**                                                                                                                                 |
+| Licence   | **GPL-3.0**, comme le dépôt firmware                                                                                                                                  |
 
 ---
 
@@ -32,10 +32,10 @@ Décisions arrêtées :
 
 La carte travaille à **deux niveaux**, qu'il ne faut jamais confondre :
 
-| | Question | Mécanisme |
-|---|---|---|
+|             | Question                                  | Mécanisme                           |
+| ----------- | ----------------------------------------- | ----------------------------------- |
 | **Modules** | de quels paquets ce routeur est-il fait ? | **déclaratif** — le firmware le dit |
-| **Rôles** | quelle entité est `Router Level` ? | **`(domaine, original_name)`** |
+| **Rôles**   | quelle entité est `Router Level` ?        | **`(domaine, original_name)`**      |
 
 ### 1.1 Les modules — le firmware déclare sa composition
 
@@ -80,12 +80,12 @@ encore les versions ne doit jamais être pris pour un firmware ancien.
 Le verdict de compatibilité a donc **quatre** valeurs, pas deux — c'est la résolution des rôles
 (§1.2) qui départage les trois cas sans capteur de version :
 
-| Capteurs de version | Rôles d'ancrage résolus | Verdict | Rendu |
-|---|---|---|---|
-| ≥ 1 | — | `supported` | la carte |
-| 0 | ≥ 1 (`activate`, `real_power`…) | `outdated` | « Mettez à jour vos paquets » |
-| 0 | 0, mais des entités au registre | `not_a_router` | « Ce device n'est pas un routeur solaire » |
-| 0 | **aucune** entité au registre | `unknown` | « Aucune entité pour ce device » + Recharger |
+| Capteurs de version | Rôles d'ancrage résolus         | Verdict        | Rendu                                        |
+| ------------------- | ------------------------------- | -------------- | -------------------------------------------- |
+| ≥ 1                 | —                               | `supported`    | la carte                                     |
+| 0                   | ≥ 1 (`activate`, `real_power`…) | `outdated`     | « Mettez à jour vos paquets »                |
+| 0                   | 0, mais des entités au registre | `not_a_router` | « Ce device n'est pas un routeur solaire »   |
+| 0                   | **aucune** entité au registre   | `unknown`      | « Aucune entité pour ce device » + Recharger |
 
 `unknown` est la valeur qui manque à un raisonnement binaire : un device tout juste ajouté, ou un
 cache de registre lu avant sa première connexion, n'est pas un firmware ancien. Ne rien conclure est
@@ -132,29 +132,18 @@ Procédure :
 
 ### 1.3 Ce qui se déduit des paquets déclarés
 
-| Information | Source |
-|---|---|
-| Moteur | le paquet `engine_*` déclaré, en ignorant `engine_common` qui accompagne toujours une feuille |
-| Nature du device | un paquet `engine_*` → routeur ; seulement `power_meter_*` → proxy / compteur seul ; aucun paquet → hors périmètre |
-| Régulateurs | `regulator_triac` / `regulator_solid_state_relay` / `regulator_mecanical_relay` — **une liste, jamais une valeur** : `esp8266-proxy-client.yaml` charge un relais statique *et* un relais mécanique, `esp32-standalone_1dimmer_2switches_1bypass.yaml` un triac *et* trois relais |
+| Information                 | Source                                                                                                                                                                                                                                                                                   |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Moteur                      | le paquet `engine_*` déclaré, en ignorant `engine_common` qui accompagne toujours une feuille                                                                                                                                                                                            |
+| Nature du device            | un paquet `engine_*` → routeur ; seulement `power_meter_*` → proxy / compteur seul ; aucun paquet → hors périmètre                                                                                                                                                                       |
+| Régulateurs                 | `regulator_triac` / `regulator_solid_state_relay` / `regulator_mecanical_relay` — **une liste, jamais une valeur** : `esp8266-proxy-client.yaml` charge un relais statique *et* un relais mécanique, `esp32-standalone_1dimmer_2switches_1bypass.yaml` un triac *et* trois relais        |
 | Nombre de relais mécaniques | le nombre d'instances `regulator_mecanical_relay_*`. **À ne pas confondre** avec le nombre de `Relay N Countdown`, qui est autre chose : `esp8266-proxy-client.yaml` charge un relais mécanique alors que `engine_1dimmer_1bypass` ne publie aucun décompte. Deux grandeurs, deux champs |
-| Source de mesure | `power_meter_fronius` / `_home_assistant` / `_proxy_client` / `_shelly_em` / `_shelly_em3` / `_jsy-mk-194t` |
-| Sonde de température | `temperature_limiter_DS18B20` vs `temperature_limiter_home_assistant` |
+| Source de mesure            | `power_meter_fronius` / `_home_assistant` / `_proxy_client` / `_shelly_em` / `_shelly_em3` / `_jsy-mk-194t`                                                                                                                                                                              |
+| Sonde de température        | `temperature_limiter_DS18B20` vs `temperature_limiter_home_assistant`                                                                                                                                                                                                                    |
 
 Les planificateurs restent énumérés par la regex `^(.*) Scheduler Router Level$` sur les entités
 métier : c'est `scheduler_unique_id` qui les nomme, et il n'y a pas de raison de coder ces noms en
 dur.
-
-### Les angles morts sont levés
-
-Les trois zones d'ombre que la carte assumait tant que la détection était inférée — saveur de
-régulateur, Dallas vs Home Assistant, Fronius vs proxy vs home_assistant — sont **résolues** par les
-capteurs de version. Les trois familles concernées ne publiaient rien d'autre qui les distingue ;
-elles se nomment désormais elles-mêmes.
-
-C'est la correction « en amont » que ce document appelait de ses vœux, faite autrement que par le
-`esphome: project:` qui y était suggéré : un capteur par paquet est plus informatif, puisqu'il donne
-aussi la version de chacun.
 
 ### Propriétés du firmware à encoder dans le catalogue
 
@@ -172,37 +161,35 @@ chemin heureux.
 4. Des noms sont partagés entre domaines : `Start tempo` et `Stop tempo` existent en `number` *et* en
    `sensor` (consigne et décompte), `Bypass tempo` aussi (`full_power_duration` vs
    `bypass_tempo_counter`). Les apparier dans l'UI : la consigne et son décompte vont ensemble.
-5. `Energy divertion Realy 3 Bypass` contient une typo, et cette typo fait partie de l'API publique.
-   La matcher telle quelle — la corriger en amont casserait toutes les installations existantes.
-6. Les unités varient d'un package à l'autre : `"w"` minuscule sur `stop_power_level`,
+5. Les unités varient d'un package à l'autre : `"w"` minuscule sur `stop_power_level`,
    `unit_of_measurement: ""` sur les réactivités, `device_class: duration` sans unité sur
    `Relay N Countdown`. La carte impose son propre libellé par rôle, ce qui permet au passage des
    unités cohérentes et traduites.
-7. `safety_temperature` est le seul nom non capitalisé.
-8. `Used for cooling` compile en `ALWAYS_OFF` : il retombe à OFF après un redémarrage. Le signaler
+6. `safety_temperature` est le seul nom non capitalisé.
+7. `Used for cooling` compile en `ALWAYS_OFF` : il retombe à OFF après un redémarrage. Le signaler
    dans l'UI pour que le comportement soit compris plutôt que découvert.
-9. `em3_phase_a/b/c_power` sont **visibles** par défaut (`show_phase_power` alimente directement
+8. `em3_phase_a/b/c_power` sont **visibles** par défaut (`show_phase_power` alimente directement
    `internal:`, donc `"False"` ⇒ visible). Les attendre, et les placer dans les diagnostics.
-10. Les planificateurs sont multi-instances par conception : les énumérer et rendre un repli par
-    instance.
+9. Les planificateurs sont multi-instances par conception : les énumérer et rendre un repli par
+   instance.
 
 Et, pour les capteurs de version :
 
-11. **Publication unique.** La lambda a un garde `static bool published` : le capteur publie une
+10. **Publication unique.** La lambda a un garde `static bool published` : le capteur publie une
     fois ~10 s après le boot, puis se tait. L'état est `unknown` d'ici là, et ne se rafraîchit
     jamais ensuite. Ne jamais conclure « firmware ancien » depuis un état, seulement depuis
     l'absence de l'entité au registre.
-12. **Préfixe multi-instance.** `regulator_mecanical_relay` porte
+11. **Préfixe multi-instance.** `regulator_mecanical_relay` porte
     `name: "regulator_mecanical_relay_${relay_unique_id}"`, et le défaut `relay_unique_id: ""`
     produit un nom terminé par un souligné. Matcher le préfixe, pas l'égalité.
-13. **Le common voyage avec la feuille.** Un moteur inclut toujours `engine_common`, les paquets JSY
+12. **Le common voyage avec la feuille.** Un moteur inclut toujours `engine_common`, les paquets JSY
     toujours `jsy-mk-194t_common`. Un device expose donc les deux, et le moteur se lit de la
     feuille.
-14. **Deux commons sont invisibles.** `power_meter_common` et `temperature_limiter_common` sont
+13. **Deux commons sont invisibles.** `power_meter_common` et `temperature_limiter_common` sont
     écrasés lorsque la feuille les inclut avec `<<: !include` — cas de
     `power_meter_home_assistant.yaml`, qui surcharge délibérément `real_power` et `consumption`.
     Leur absence n'apprend rien.
-15. **Lire la version avec tolérance.** L'`AGENTS.md` du firmware décrit un format d'état différent
+14. **Lire la version avec tolérance.** L'`AGENTS.md` du firmware décrit un format d'état différent
     de celui que son code publie : `<fichier>.yaml <version>` au lieu du semver nu. Le jour où
     quelqu'un alignera le code sur sa documentation, une carte qui exige un semver strict cassera
     chez tous les utilisateurs. Donc : semver nu d'abord, sinon extraction du premier semver trouvé
@@ -250,15 +237,15 @@ binaire et les compteurs `Start tempo` / `Stop tempo` s'affichent en décompte.
 
 **Zone 3 — contrôles**, sections rendues seulement si le module est reconnu :
 
-| Section | Entités |
-|---|---|
-| Routage (progressif) | `Router Level`, `Target grid exchange` |
-| Routage (tout ou rien) | `Router Level` (pas 100), `Start power level`, `Start tempo`, `Stop power level`, `Stop tempo` |
-| Bypass | `Bypass tempo` (number) |
-| Compteur d'énergie | `Load power` |
-| Température | `Stop temperature`, `Restart temperature`, `Used for cooling` |
-| Ventilateur | `Temperature to start fan`, `Temperature to stop fan` |
-| Planificateur × N | `Activate <X> Scheduler`, début et fin rendus comme deux sélecteurs d'heure (paires heure+minute fusionnées), `<X> Scheduler Router Level`, `<X> Scheduler Checking End Threshold` |
+| Section                | Entités                                                                                                                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Routage (progressif)   | `Router Level`, `Target grid exchange`                                                                                                                                             |
+| Routage (tout ou rien) | `Router Level` (pas 100), `Start power level`, `Start tempo`, `Stop power level`, `Stop tempo`                                                                                     |
+| Bypass                 | `Bypass tempo` (number)                                                                                                                                                            |
+| Compteur d'énergie     | `Load power`                                                                                                                                                                       |
+| Température            | `Stop temperature`, `Restart temperature`, `Used for cooling`                                                                                                                      |
+| Ventilateur            | `Temperature to start fan`, `Temperature to stop fan`                                                                                                                              |
+| Planificateur × N      | `Activate <X> Scheduler`, début et fin rendus comme deux sélecteurs d'heure (paires heure+minute fusionnées), `<X> Scheduler Router Level`, `<X> Scheduler Checking End Threshold` |
 
 Détail issu de `docs/en/solar_router.md` : quand le routage est **actif**, `Router Level` est écrasé en
 continu par l'algorithme. Le slider reste manipulable mais la carte affiche une note explicite et le
@@ -377,7 +364,7 @@ l'artefact, et comme la carte est un **unique fichier JavaScript sans binaire an
 - **Ne pas recalculer le profil à chaque changement d'état.** `Real Power` a un
   `update_interval: 1s` : l'objet `hass` change environ une fois par seconde et `updated()` est
   rappelé d'autant. La détection des paquets et la résolution des 63 rôles ne dépendent que du
-  *registre* : les mémoïser par `device_id`, et ne lire que les versions au rendu. La séparation
+  *registre* : les mémoiser par `device_id`, et ne lire que les versions au rendu. La séparation
   présence/version du §1.1 sert aussi à cela.
 
 ---
@@ -391,27 +378,27 @@ JSON `{ device, entities: [{entity_id, domain, original_name, entity_category, s
 d'un sensor ordinaire. Chaque fixture porte les capteurs de version des paquets qu'elle représente —
 ce n'est plus un détail de la fixture, c'en est l'information centrale.
 
-| Fixture | Dérivée de |
-|---|---|
-| `engine_1dimmer_fronius` | `esp32-standalone.yaml` |
-| `engine_1dimmer_2switches` | `esp32-standalone_1dimmer_2switches.yaml` |
-| `engine_1dimmer_2switches_1bypass` | `esp32-standalone_1dimmer_2switches_1bypass.yaml` |
-| `engine_1dimmer_ds18b20_counter` | `esp32-standalone_DS18B20.yaml` |
-| `engine_1dimmer_scheduler` | `esp32-standalone_shedule_forced_run.yaml` |
-| `engine_1dimmer_scheduler_x2` | la variante `day`/`night` commentée dans ce même fichier |
-| `engine_1dimmer_em3` | `esp32-em3-router.yaml` (phases visibles) |
-| `engine_1dimmer_jsy_debug` | `esp32-JSY-MK-194T.yaml` |
-| `engine_1dimmer_1bypass` | `esp8266-proxy-client.yaml` (sans `common.yaml`) |
-| `engine_1switch_ha_limiter` | `esp8266-standalone_on_off.yaml` |
-| `proxy_only` | `esp8285-power-meter-proxy.yaml` |
-| `engine_1dimmer_fan` | `wt32-eth01-solar-water-heater.yaml` |
-| `regulators_unhidden` | variante avec `hide_regulators: "False"` + `hide_leds: "False"` |
-| `unavailable` | toutes entités `unavailable` (device hors ligne) |
-| `firmware_legacy` | un routeur complet **sans aucun capteur de version** — verdict `outdated` |
-| `versions_unpublished` | capteurs présents, tous les états à `unknown` (device fraîchement démarré) — doit rester `supported` |
-| `versions_disabled` | `firmware_legacy` plus les mêmes capteurs en `disabled_by: "user"` — `outdated`, mais avec le message « réactivez-les » |
-| `not_a_router` | un device ESPHome quelconque, aucun nom du catalogue — verdict `not_a_router` |
-| `two_engines` | montage bricolé déclarant deux paquets `engine_*` — choix déterministe du plus spécifique, plus un avertissement |
+| Fixture                            | Dérivée de                                                                                                              |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `engine_1dimmer_fronius`           | `esp32-standalone.yaml`                                                                                                 |
+| `engine_1dimmer_2switches`         | `esp32-standalone_1dimmer_2switches.yaml`                                                                               |
+| `engine_1dimmer_2switches_1bypass` | `esp32-standalone_1dimmer_2switches_1bypass.yaml`                                                                       |
+| `engine_1dimmer_ds18b20_counter`   | `esp32-standalone_DS18B20.yaml`                                                                                         |
+| `engine_1dimmer_scheduler`         | `esp32-standalone_shedule_forced_run.yaml`                                                                              |
+| `engine_1dimmer_scheduler_x2`      | la variante `day`/`night` commentée dans ce même fichier                                                                |
+| `engine_1dimmer_em3`               | `esp32-em3-router.yaml` (phases visibles)                                                                               |
+| `engine_1dimmer_jsy_debug`         | `esp32-JSY-MK-194T.yaml`                                                                                                |
+| `engine_1dimmer_1bypass`           | `esp8266-proxy-client.yaml` (sans `common.yaml`)                                                                        |
+| `engine_1switch_ha_limiter`        | `esp8266-standalone_on_off.yaml`                                                                                        |
+| `proxy_only`                       | `esp8285-power-meter-proxy.yaml`                                                                                        |
+| `engine_1dimmer_fan`               | `wt32-eth01-solar-water-heater.yaml`                                                                                    |
+| `regulators_unhidden`              | variante avec `hide_regulators: "False"` + `hide_leds: "False"`                                                         |
+| `unavailable`                      | toutes entités `unavailable` (device hors ligne)                                                                        |
+| `firmware_legacy`                  | un routeur complet **sans aucun capteur de version** — verdict `outdated`                                               |
+| `versions_unpublished`             | capteurs présents, tous les états à `unknown` (device fraîchement démarré) — doit rester `supported`                    |
+| `versions_disabled`                | `firmware_legacy` plus les mêmes capteurs en `disabled_by: "user"` — `outdated`, mais avec le message « réactivez-les » |
+| `not_a_router`                     | un device ESPHome quelconque, aucun nom du catalogue — verdict `not_a_router`                                           |
+| `two_engines`                      | montage bricolé déclarant deux paquets `engine_*` — choix déterministe du plus spécifique, plus un avertissement        |
 
 Deux voies complémentaires pour les produire :
 
@@ -436,6 +423,8 @@ Dans le **dépôt firmware**, ajouter une page sous la section existante `Home A
 - l'entrée `nav:` dans `mkdocs.yml` (indentation 6 / 14 espaces à respecter) ;
 - l'entrée `nav_translations` pour le titre `Card` → `Carte`.
 
+Dans la documentation `docs/??/card.md` ajouter un bouton lien HACS pour une installation facile de la carte.
+
 Contraintes CI du dépôt firmware à respecter :
 
 - **aucun nouveau `*.yaml` à la racine** — `esphome-ci.yaml` fait `ls *.yaml` et l'injecte dans la
@@ -445,20 +434,20 @@ Contraintes CI du dépôt firmware à respecter :
 - `mkdocs build --strict` : zéro lien cassé ;
 - titre de PR conventional-commit (`docs(card): …`).
 
-Ce dépôt a son propre `README.md`, rendu par HACS : capture d'écran, installation, options de
+Ce dépôt a son propre `README.md`, rendu par HACS : capture d'écran, installation (avec bouton lien HACS ), options de
 configuration, tableau des modules reconnus.
 
 ---
 
 ## 6. Phases
 
-| # | Contenu | Fin de phase |
-|---|---|---|
-| 1 | Squelette du dépôt, build Rollup, `hacs.json`, harnais Docker HA, carte « hello » enregistrée dans `window.customCards` | la carte s'affiche dans un vrai HA depuis `/local/`, visible dans le sélecteur de cartes |
-| 2 | Détection déclarative (`PACKAGES`, `detectPackages`) + résolution des rôles + les 19 fixtures + Vitest | `RouterProfile` correct sur les 19 fixtures, y compris multi-instances, `unavailable`, et les quatre verdicts de compatibilité |
-| 3 | Sections de contrôle, éditeur GUI avec récapitulatif des modules, i18n en/fr | toutes les variables modifiables de chaque module sont exposées et écrivent bien via `hass.callService` |
-| 4 | Bandeau live : jauge, flux réseau/charge, énergie du jour, alertes sécurité et planificateur | rendu correct pour moteur progressif **et** tout-ou-rien |
-| 5 | Finition (thème, responsive, a11y, états indisponibles), Playwright, docs bilingues, `release.yml`, soumission HACS | CI verte, validation sur routeurs réels, dépôt prêt pour HACS |
+| #   | Contenu                                                                                                                 | Fin de phase                                                                                                                   |
+| --- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Squelette du dépôt, build Rollup, `hacs.json`, harnais Docker HA, carte « hello » enregistrée dans `window.customCards` | la carte s'affiche dans un vrai HA depuis `/local/`, visible dans le sélecteur de cartes                                       |
+| 2   | Détection déclarative (`PACKAGES`, `detectPackages`) + résolution des rôles + les 19 fixtures + Vitest                  | `RouterProfile` correct sur les 19 fixtures, y compris multi-instances, `unavailable`, et les quatre verdicts de compatibilité |
+| 3   | Sections de contrôle, éditeur GUI avec récapitulatif des modules, i18n en/fr                                            | toutes les variables modifiables de chaque module sont exposées et écrivent bien via `hass.callService`                        |
+| 4   | Bandeau live : jauge, flux réseau/charge, énergie du jour, alertes sécurité et planificateur                            | rendu correct pour moteur progressif **et** tout-ou-rien                                                                       |
+| 5   | Finition (thème, responsive, a11y, états indisponibles), Playwright, docs bilingues, `release.yml`, soumission HACS     | CI verte, validation sur routeurs réels, dépôt prêt pour HACS                                                                  |
 
 ---
 
