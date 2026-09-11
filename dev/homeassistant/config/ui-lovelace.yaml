@@ -47,6 +47,23 @@ views:
       - type: custom:solar-router-demo-card
         demo: versions_disabled
 
+  # The live band, including the two states no configuration produces on
+  # demand: the safety limiter tripped, and a scheduler window open.
+  - title: Live
+    path: live
+    cards:
+      - type: custom:solar-router-demo-card
+        demo: engine_1dimmer_fronius
+      - type: custom:solar-router-demo-card
+        demo: engine_1switch_ha_limiter
+      - type: custom:solar-router-demo-card
+        demo: safety_tripped
+      - type: custom:solar-router-demo-card
+        demo: scheduler_open
+      - type: custom:solar-router-demo-card
+        demo: safety_tripped
+        lang: fr
+
   # The same router in both languages, so a translation gap shows up as a
   # difference rather than as a key nobody notices.
   - title: Français

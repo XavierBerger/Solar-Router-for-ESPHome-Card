@@ -15,7 +15,6 @@
   "card.show_internal_one": "Afficher 1 paquet interne",
   "card.diagnostics": "Diagnostics ({count})",
   "card.entities_on_device": "Entités de cet appareil ({count})",
-
   "card.outdated_title": "Mettez à jour vos paquets Solar Router.",
   "card.outdated_body": "Cette carte lit la version que chaque paquet publie, ce que les firmwares plus anciens ne font pas. Dans votre configuration ESPHome, passez refresh: 0s, puis recompilez et téléversez.",
   "card.versions_disabled_title": "Vos entités de version de module sont désactivées.",
@@ -24,7 +23,6 @@
   "card.not_a_router_body": "{deviceId} ne publie aucune des entités d'un appareil Solar Router for ESPHome. Choisissez un autre appareil.",
   "card.no_entities_title": "Aucune entité pour cet appareil pour l'instant.",
   "card.no_entities_body": "Il ne s'est peut-être jamais connecté depuis son ajout. Rechargez une fois qu'il sera en ligne.",
-
   "editor.device_id": "Routeur solaire",
   "editor.name": "Titre",
   "editor.advanced_open": "Ouvrir la section Avancé par défaut",
@@ -32,11 +30,21 @@
   "editor.diagnostic": "Diagnostic ({count})",
   "editor.not_a_router": "Cet appareil ne publie aucune des entités d'un Solar Router. Choisissez-en un autre.",
   "editor.no_entities": "Aucune entité pour cet appareil pour l'instant — il ne s'est peut-être jamais connecté depuis son ajout.",
-
   "hardware.engine": "Moteur",
   "hardware.power_meter": "Compteur de puissance",
   "hardware.regulator": "Régulateur",
-
+  "live.routing": "routage",
+  "live.grid": "Réseau",
+  "live.consumption": "Charge",
+  "live.diverted": "Routé",
+  "live.today": "Aujourd'hui",
+  "live.on": "Actif",
+  "live.off": "Inactif",
+  "live.starting_in": "Démarrage dans",
+  "live.stopping_in": "Arrêt dans",
+  "live.safety_reached": "Limite de sécurité atteinte — le routage est suspendu",
+  "live.safety_reached_at": "Limite de sécurité atteinte à {temperature} °C — le routage est suspendu",
+  "live.scheduler_open": "Le planificateur « {id} » est actif jusqu'à {until}",
   "section.routing": "Routage",
   "section.onoff": "Routage",
   "section.bypass": "Bypass",
@@ -45,7 +53,6 @@
   "section.fan": "Ventilateur",
   "section.advanced": "Réglages fins",
   "section.scheduler": "Planificateur « {id} »",
-
   "category.power_meter": "Compteur de puissance",
   "category.engine": "Moteur",
   "category.regulator": "Régulateur",
@@ -53,24 +60,20 @@
   "category.temperature": "Température",
   "category.scheduler": "Planificateur",
   "category.system": "Système",
-
   "group.common": "Appareil",
   "group.debug_sensors": "Capteurs de mise au point",
   "group.power_meter_shelly_em3": "Phases Shelly EM3",
   "group.jsy-mk-194t_common": "JSY-MK-194T",
-
   "liveness.unavailable": "indisponible",
   "liveness.unknown": "inconnu",
   "liveness.missing": "absent de Home Assistant",
   "liveness.left": "{value} restant",
   "liveness.yes": "oui",
   "liveness.no": "non",
-
   "note.router_level_driven": "Piloté par le routeur tant que le routage est actif",
   "note.resets_on_restart": "Revient à off au redémarrage du routeur",
   "note.restart_now": "Redémarre le routeur immédiatement",
   "note.regulator_readonly": "Lecture seule sur ce moteur",
-
   "role.activate": "Routage solaire",
   "role.router_level": "Niveau du routeur",
   "role.target_grid_exchange": "Échange réseau cible",
@@ -101,13 +104,11 @@
   "role.energy_divertion_relay_2": "Routage vers le relais 2",
   "role.energy_divertion_relay_3_bypass": "Routage vers le relais de bypass",
   "role.safety_temperature": "Température",
-
   "scheduler.activate": "Activé",
   "scheduler.router_level": "Niveau du routeur",
   "scheduler.checking_end_threshold": "Seuil de fin",
   "scheduler.begin": "Début",
   "scheduler.end": "Fin",
-
   "package.power_meter_fronius": "Fronius Smart Meter",
   "package.power_meter_shelly_em": "Shelly EM",
   "package.power_meter_shelly_em3": "Shelly EM3 / Pro 3EM",
@@ -134,7 +135,6 @@
   "package.scheduler_forced_run": "Planificateur",
   "package.common": "Noyau",
   "package.debug_sensors": "Capteurs de mise au point",
-
   "warning.engine_leaf_missing": "Un moteur est chargé mais aucun paquet moteur ne déclare de version. Vos paquets sont probablement en cours de mise à jour.",
   "warning.engine_not_declared": "Cet appareil se comporte comme un routeur mais ne déclare aucun paquet moteur.",
   "warning.multiple_engines": "Deux paquets moteur sont déclarés ({engines}). La carte retient le plus spécifique.",

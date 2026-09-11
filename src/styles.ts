@@ -208,6 +208,111 @@ export const cardStyles = css`
     }
   }
 
+  /* Live band: the gauge, the readings and the two banners. */
+  .live {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 16px;
+    align-items: center;
+    margin-top: 12px;
+  }
+
+  .gauge {
+    position: relative;
+    width: 120px;
+    height: 120px;
+  }
+
+  .gauge svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .gauge-track,
+  .gauge-value {
+    fill: none;
+    stroke-width: 9;
+    stroke-linecap: round;
+  }
+
+  .gauge-track {
+    stroke: var(--divider-color, #e0e0e0);
+  }
+
+  .gauge-value {
+    stroke: var(--primary-color, #03a9f4);
+    transition: stroke-dashoffset 0.4s ease;
+  }
+
+  .gauge-reading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .gauge-number {
+    font-size: 1.6em;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gauge-caption {
+    color: var(--secondary-text-color, #727272);
+    font-size: 0.8em;
+  }
+
+  .readings {
+    display: grid;
+    gap: 2px;
+  }
+
+  .reading {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .reading-label {
+    color: var(--secondary-text-color, #727272);
+  }
+
+  .reading-value {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .arrow {
+    color: var(--secondary-text-color, #727272);
+    margin-right: 2px;
+  }
+
+  .banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    line-height: 1.3;
+  }
+
+  .banner.alert {
+    background: color-mix(in srgb, var(--error-color, #db4437) 14%, transparent);
+    color: var(--error-color, #db4437);
+  }
+
+  .banner.info {
+    background: var(--secondary-background-color, #f5f5f5);
+  }
+
+  .banner ha-icon {
+    --mdc-icon-size: 20px;
+    flex: none;
+  }
+
   /* Control sections. */
   .section {
     margin-top: 14px;
@@ -291,6 +396,15 @@ export const cardStyles = css`
   }
 
   @media (max-width: 450px) {
+    .live {
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+
+    .readings {
+      width: 100%;
+    }
+
     .control-row {
       grid-template-columns: 1fr;
     }

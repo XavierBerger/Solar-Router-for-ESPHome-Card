@@ -4,6 +4,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { renderHardware, renderModuleFold } from "./components/module-summary";
 import { renderAdvancedControls, renderDiagnostics } from "./sections/advanced";
 import { renderControlSections, renderHeaderControl } from "./sections/controls";
+import { renderLive } from "./sections/live";
 import { renderSchedulerSections } from "./sections/scheduler";
 import { CARD_NAME, CARD_TYPE, CARD_VERSION, REPOSITORY_URL } from "./const";
 import { detectRouter } from "./detect/detect";
@@ -182,7 +183,7 @@ export class SolarRouterCard extends LitElement {
       <ha-card .header=${title}>
         <div class="content">
           ${this._renderStatus(profile)} ${renderHeaderControl(profile, this.hass)}
-          ${renderControlSections(profile, this.hass)}
+          ${renderLive(profile, this.hass)} ${renderControlSections(profile, this.hass)}
           ${renderSchedulerSections(profile.schedulers, this.hass)}
           <details class="advanced" ?open=${this._config.advanced_open ?? false}>
             <summary>${localize(this.hass, "card.advanced")}</summary>

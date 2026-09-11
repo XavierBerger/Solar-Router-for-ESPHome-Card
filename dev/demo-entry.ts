@@ -86,6 +86,64 @@ function derive(
 
 const ROUTER = BASE.engine_1dimmer_fronius;
 
+/**
+ * Plausible live values.
+ *
+ * `esphome config` describes entities but never their states, so every fixture
+ * arrives with its business entities at `unknown` — which is right for the
+ * detection tests and useless for looking at the live band. These are sample
+ * readings, chosen to exercise the interesting paths: a router exporting to the
+ * grid while diverting, rather than a row of dashes.
+ */
+const LIVE: Record<string, string> = {
+  "Activate Solar Routing": "on",
+  "Real Power": "-1240",
+  Consumption: "1700",
+  "Router Level": "68",
+  "Power divertion": "1240",
+  "Total energy diverted": "4.21",
+  "Total daily energy diverted": "4.21",
+  "Target grid exchange": "0",
+  safety_temperature: "54",
+  "Safety limit reached": "off",
+  "Stop temperature": "60",
+  "Restart temperature": "50",
+  "Used for cooling": "off",
+  "Load power": "2000",
+  "Start power level": "100",
+  "Stop power level": "50",
+  "Start tempo": "5",
+  "Stop tempo": "5",
+  "Bypass tempo": "30",
+  "Temperature to start fan": "45",
+  "Temperature to stop fan": "40",
+  "Up Reactivity": "1",
+  "Down Reactivity": "1",
+  "Regulator Opening": "68",
+};
+
+/** Scheduler entity names carry their instance id, so they match by shape. */
+const LIVE_PATTERNS: readonly (readonly [RegExp, string])[] = [
+  [/^Activate .* Scheduler$/, "off"],
+  [/Scheduler Router Level$/, "80"],
+  [/Scheduler Checking End Threshold$/, "0"],
+  [/Scheduler Begin Hour$/, "9"],
+  [/Scheduler Begin Minute$/, "0"],
+  [/Scheduler End Hour$/, "17"],
+  [/Scheduler End Minute$/, "0"],
+  [/Countdown$/, "0"],
+];
+
+function liven(entity: FixtureEntity): FixtureEntity {
+  if (isVersion(entity)) {
+    return entity;
+  }
+  const name = entity.original_name ?? "";
+  const sample =
+    LIVE[name] ?? LIVE_PATTERNS.find(([pattern]) => pattern.test(name))?.[1] ?? undefined;
+  return sample === undefined ? entity : { ...entity, state: sample };
+}
+
 /** The states no real config produces, derived the way the unit tests do. */
 const DERIVED: Record<string, Fixture> = {
   legacy_no_versions: derive(ROUTER, "legacy_no_versions", (e) => (isVersion(e) ? null : e)),
@@ -96,7 +154,42 @@ const DERIVED: Record<string, Fixture> = {
   ),
 };
 
-const FIXTURES: Record<string, Fixture> = { ...BASE, ...DERIVED };
+const SAFETY: Fixture = derive(BASE.engine_1dimmer_ds18b20_counter, "safety_tripped", (e) =>
+  e.original_name === "Safety limit reached"
+    ? { ...liven(e), state: "on" }
+    : e.original_name === "safety_temperature"
+      ? { ...liven(e), state: "62" }
+      : liven(e),
+);
+
+const SCHEDULED: Fixture = derive(BASE.engine_1dimmer_scheduler, "scheduler_open", (e) => {
+  const name = e.original_name ?? "";
+  if (/Scheduler$/.test(name)) {
+    return { ...liven(e), state: "on" };
+  }
+  if (/Begin Hour$|Begin Minute$/.test(name)) {
+    return { ...liven(e), state: "0" };
+  }
+  if (/End Hour$/.test(name)) {
+    return { ...liven(e), state: "23" };
+  }
+  if (/End Minute$/.test(name)) {
+    return { ...liven(e), state: "59" };
+  }
+  return liven(e);
+});
+
+const FIXTURES: Record<string, Fixture> = {
+  ...Object.fromEntries(
+    Object.entries(BASE).map(([name, fixture]) => [
+      name,
+      { ...fixture, entities: fixture.entities.map(liven) },
+    ]),
+  ),
+  ...DERIVED,
+  safety_tripped: SAFETY,
+  scheduler_open: SCHEDULED,
+};
 
 /**
  * One fake `hass` holding every fixture at once.
