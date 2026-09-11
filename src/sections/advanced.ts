@@ -14,29 +14,30 @@ import { renderControlRow } from "../components/control-row";
 import { CATALOG } from "../detect/catalog";
 import type { Role, RoleOwner, RouterProfile } from "../detect/types";
 import type { HomeAssistant } from "../types/home-assistant";
+import { localize } from "../localize/localize";
 import { labelFor } from "./controls";
 
 /** Diagnostics grouped the way the firmware packages them. */
-export const DIAGNOSTIC_GROUPS: readonly { readonly owner: RoleOwner; readonly title: string }[] = [
-  { owner: "common", title: "Device" },
-  { owner: "debug_sensors", title: "Debug sensors" },
-  { owner: "power_meter_shelly_em3", title: "Shelly EM3 phases" },
-  { owner: "jsy-mk-194t_common", title: "JSY-MK-194T" },
+export const DIAGNOSTIC_GROUPS: readonly RoleOwner[] = [
+  "common",
+  "debug_sensors",
+  "power_meter_shelly_em3",
+  "jsy-mk-194t_common",
 ];
 
 function rolesOfSection(section: "advanced" | "diagnostics"): Role[] {
   return (Object.keys(CATALOG) as Role[]).filter((role) => CATALOG[role].section === section);
 }
 
-function noteFor(role: Role, writable: boolean): string | undefined {
+function noteFor(hass: HomeAssistant, role: Role, writable: boolean): string | undefined {
   if (role === "restart") {
-    return "Restarts the router immediately";
+    return localize(hass, "note.restart_now");
   }
   if (role === "regulator_opening" && !writable) {
     // `engine_1dimmer` publishes this as a number and lets you drive the
     // regulator by hand; the other dimmer engines publish a sensor. Saying so
     // stops a read-only row from looking like a broken control.
-    return "Read-only on this engine";
+    return localize(hass, "note.regulator_readonly");
   }
   return undefined;
 }
@@ -53,14 +54,14 @@ export function renderAdvancedControls(
 
   return html`
     <div class="section">
-      <div class="section-title">Fine adjustment</div>
+      <div class="section-title">${localize(hass, "section.advanced")}</div>
       ${roles.map((role) => {
         const resolved = profile.roles[role];
         return resolved
           ? renderControlRow(hass, resolved, {
-              label: labelFor(role),
+              label: labelFor(hass, role),
               unit: CATALOG[role].unit,
-              note: noteFor(role, resolved.writable),
+              note: noteFor(hass, role, resolved.writable),
             })
           : nothing;
       })}
@@ -84,14 +85,14 @@ export function renderDiagnostics(
     return nothing;
   }
 
-  const groups = DIAGNOSTIC_GROUPS.map((group) => ({
-    title: group.title,
-    roles: present.filter((role) => CATALOG[role].owner === group.owner),
+  const groups = DIAGNOSTIC_GROUPS.map((owner) => ({
+    title: localize(hass, `group.${owner}`),
+    roles: present.filter((role) => CATALOG[role].owner === owner),
   })).filter((group) => group.roles.length > 0);
 
   return html`
     <details class="diagnostics">
-      <summary>Diagnostics (${present.length})</summary>
+      <summary>${localize(hass, "card.diagnostics", { count: present.length })}</summary>
       ${groups.map(
         (group) => html`
           <div class="section">
@@ -100,7 +101,7 @@ export function renderDiagnostics(
               const resolved = profile.roles[role];
               return resolved
                 ? renderControlRow(hass, resolved, {
-                    label: labelFor(role),
+                    label: labelFor(hass, role),
                     unit: CATALOG[role].unit,
                   })
                 : nothing;

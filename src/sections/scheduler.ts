@@ -10,18 +10,9 @@
 import { html, nothing, type TemplateResult } from "lit";
 
 import { liveness, renderControlRow, writeNumber } from "../components/control-row";
-import type { ResolvedRole, SchedulerInstance, SchedulerRole } from "../detect/types";
+import type { ResolvedRole, SchedulerInstance } from "../detect/types";
+import { localize } from "../localize/localize";
 import type { HomeAssistant } from "../types/home-assistant";
-
-const LABELS: Record<SchedulerRole, string> = {
-  activate: "Enabled",
-  router_level: "Router level",
-  checking_end_threshold: "End threshold",
-  begin_hour: "Start",
-  begin_minute: "Start",
-  end_hour: "End",
-  end_minute: "End",
-};
 
 function two(value: number): string {
   return String(value).padStart(2, "0");
@@ -91,19 +82,26 @@ function renderScheduler(
   const rows: (TemplateResult | typeof nothing)[] = [];
 
   if (roles.activate) {
-    rows.push(renderControlRow(hass, roles.activate, { label: LABELS.activate }));
+    rows.push(
+      renderControlRow(hass, roles.activate, { label: localize(hass, "scheduler.activate") }),
+    );
   }
-  rows.push(renderTimeRow(hass, LABELS.begin_hour, roles.begin_hour, roles.begin_minute));
-  rows.push(renderTimeRow(hass, LABELS.end_hour, roles.end_hour, roles.end_minute));
+  rows.push(
+    renderTimeRow(hass, localize(hass, "scheduler.begin"), roles.begin_hour, roles.begin_minute),
+  );
+  rows.push(renderTimeRow(hass, localize(hass, "scheduler.end"), roles.end_hour, roles.end_minute));
   if (roles.router_level) {
     rows.push(
-      renderControlRow(hass, roles.router_level, { label: LABELS.router_level, unit: "%" }),
+      renderControlRow(hass, roles.router_level, {
+        label: localize(hass, "scheduler.router_level"),
+        unit: "%",
+      }),
     );
   }
   if (roles.checking_end_threshold) {
     rows.push(
       renderControlRow(hass, roles.checking_end_threshold, {
-        label: LABELS.checking_end_threshold,
+        label: localize(hass, "scheduler.checking_end_threshold"),
       }),
     );
   }
@@ -115,7 +113,7 @@ function renderScheduler(
 
   return html`
     <div class="section">
-      <div class="section-title">Scheduler “${instance.id}”</div>
+      <div class="section-title">${localize(hass, "section.scheduler", { id: instance.id })}</div>
       ${shown}
     </div>
   `;

@@ -33,9 +33,9 @@ describe("the sections come from the catalogue", () => {
   });
 
   it("claims every role of every control section", () => {
-    const claimed = new Set(CONTROL_SECTIONS.flatMap((section) => rolesOf(section.id)));
+    const claimed = new Set(CONTROL_SECTIONS.flatMap((section) => rolesOf(section)));
     const declared = (Object.keys(CATALOG) as Role[]).filter((role) =>
-      CONTROL_SECTIONS.some((section) => CATALOG[role].section === section.id),
+      CONTROL_SECTIONS.some((section) => CATALOG[role].section === section),
     );
     expect([...claimed].sort()).toEqual(declared.sort());
   });
@@ -43,7 +43,7 @@ describe("the sections come from the catalogue", () => {
   it("never shows the same role in two sections", () => {
     const seen = new Set<Role>();
     for (const section of CONTROL_SECTIONS) {
-      for (const role of rolesOf(section.id)) {
+      for (const role of rolesOf(section)) {
         expect(seen.has(role)).toBe(false);
         seen.add(role);
       }
@@ -57,14 +57,14 @@ describe("the labels", () => {
     // every role the user can act on carries a label of its own. Comparing the
     // strings would not catch a gap: a few labels legitimately read the same as
     // the firmware name, so what matters is that the entry exists.
-    const roles = CONTROL_SECTIONS.flatMap((section) => rolesOf(section.id));
+    const roles = CONTROL_SECTIONS.flatMap((section) => rolesOf(section));
     for (const role of [...roles, "activate" as Role]) {
       expect(Object.keys(ROLE_LABELS)).toContain(role);
     }
   });
 
   it("never leaks the known firmware typo", () => {
-    const all = (Object.keys(CATALOG) as Role[]).map(labelFor).join(" ");
+    const all = (Object.keys(CATALOG) as Role[]).map((role) => labelFor(undefined, role)).join(" ");
     expect(all).not.toContain("Realy");
   });
 });
@@ -72,14 +72,11 @@ describe("the labels", () => {
 describe("every control section is reachable", () => {
   const profiles = REAL.map((name) => profileOf(loadFixture(name)));
 
-  it.each(CONTROL_SECTIONS.map((s) => s.id))(
-    "%s resolves on at least one real router",
-    (section) => {
-      const roles = rolesOf(section);
-      const reachable = profiles.some((profile) => roles.some((role) => profile.roles[role]));
-      expect(reachable).toBe(true);
-    },
-  );
+  it.each(CONTROL_SECTIONS)("%s resolves on at least one real router", (section) => {
+    const roles = rolesOf(section);
+    const reachable = profiles.some((profile) => roles.some((role) => profile.roles[role]));
+    expect(reachable).toBe(true);
+  });
 
   it("gives a progressive router its routing section and no on/off section", () => {
     const profile = profileOf(loadFixture("engine_1dimmer_fronius"));
@@ -95,7 +92,7 @@ describe("every control section is reachable", () => {
   it("gives a power meter proxy no control section at all", () => {
     const profile = profileOf(loadFixture("proxy_only"));
     for (const section of CONTROL_SECTIONS) {
-      expect(rolesOf(section.id).some((role) => profile.roles[role])).toBe(false);
+      expect(rolesOf(section).some((role) => profile.roles[role])).toBe(false);
     }
   });
 });
@@ -104,7 +101,7 @@ describe("the advanced section", () => {
   it("has a group for every diagnostic role, so none can vanish", () => {
     // A diagnostics role whose owner is missing from the groups would simply
     // not be rendered — no error, no gap, just gone.
-    const grouped = new Set(DIAGNOSTIC_GROUPS.map((group) => group.owner));
+    const grouped = new Set(DIAGNOSTIC_GROUPS);
     const owners = (Object.keys(CATALOG) as Role[])
       .filter((role) => CATALOG[role].section === "diagnostics")
       .map((role) => CATALOG[role].owner);
@@ -146,9 +143,9 @@ describe("liveness", () => {
   });
 
   it("has a word for each of them but silence for a healthy one", () => {
-    expect(livenessText("ok")).toBe("");
+    expect(livenessText(undefined, "ok")).toBe("");
     for (const state of ["unavailable", "unknown", "missing"] as const) {
-      expect(livenessText(state).length).toBeGreaterThan(0);
+      expect(livenessText(undefined, state).length).toBeGreaterThan(0);
     }
   });
 });

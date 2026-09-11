@@ -8,6 +8,7 @@
 
 import { html, nothing, type TemplateResult } from "lit";
 
+import { localize } from "../localize/localize";
 import type { ResolvedRole, Unit } from "../detect/types";
 import type { HassEntity, HomeAssistant } from "../types/home-assistant";
 
@@ -27,17 +28,11 @@ export function liveness(entity: HassEntity | undefined): Liveness {
   return "ok";
 }
 
-export function livenessText(state: Liveness): string {
-  switch (state) {
-    case "unavailable":
-      return "unavailable";
-    case "unknown":
-      return "unknown";
-    case "missing":
-      return "not in Home Assistant";
-    case "ok":
-      return "";
-  }
+export function livenessText(
+  hass: Pick<HomeAssistant, "language"> | undefined,
+  state: Liveness,
+): string {
+  return state === "ok" ? "" : localize(hass, `liveness.${state}`);
 }
 
 export function writeNumber(
@@ -113,7 +108,7 @@ export function renderControlRow(
       <div class="control-value">
         ${
           state !== "ok"
-            ? html`<span class="dim">${livenessText(state)}</span>`
+            ? html`<span class="dim">${livenessText(hass, state)}</span>`
             : renderControl(hass, role, entity, options)
         }
         ${options.aside ? html`<span class="aside">${options.aside}</span>` : nothing}
@@ -156,7 +151,9 @@ function renderControl(
   }
 
   if (role.domain === "binary_sensor") {
-    return html`<span class="readout">${entity.state === "on" ? "yes" : "no"}</span>`;
+    return html`<span class="readout"
+      >${localize(hass, entity.state === "on" ? "liveness.yes" : "liveness.no")}</span
+    >`;
   }
 
   return html`<span class="readout"

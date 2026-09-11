@@ -21,6 +21,7 @@ import { detectRouter } from "./detect/detect";
 import { matchVersionEntity } from "./detect/packages";
 import { loadDeviceEntities, type DeviceEntities } from "./detect/registry";
 import type { RouterProfile } from "./detect/types";
+import { localize } from "./localize/localize";
 import { editorStyles } from "./styles";
 import type { HomeAssistant } from "./types/home-assistant";
 import type { SolarRouterCardConfig } from "./types/config";
@@ -38,12 +39,6 @@ const SCHEMA = [
   { name: "name", selector: { text: {} } },
   { name: "advanced_open", selector: { boolean: {} } },
 ] as const;
-
-const LABELS: Record<string, string> = {
-  device_id: "Solar router",
-  name: "Title",
-  advanced_open: "Start with Advanced open",
-};
 
 @customElement("solar-router-card-editor")
 export class SolarRouterCardEditor extends LitElement {
@@ -125,7 +120,7 @@ export class SolarRouterCardEditor extends LitElement {
         .hass=${this.hass}
         .data=${this._config}
         .schema=${SCHEMA}
-        .computeLabel=${(entry: { name: string }) => LABELS[entry.name] ?? entry.name}
+        .computeLabel=${(entry: { name: string }) => localize(this.hass, `editor.${entry.name}`)}
         @value-changed=${this._valueChanged}
       ></ha-form>
       ${this._renderRecognised()}
@@ -144,24 +139,16 @@ export class SolarRouterCardEditor extends LitElement {
 
     const profile = this._profile;
     if (!profile) {
-      return html`<div class="notice">Reading the entity registry…</div>`;
+      return html`<div class="notice">${localize(this.hass, "card.reading_registry")}</div>`;
     }
 
     switch (profile.firmware) {
       case "outdated":
         return this._renderOutdated();
       case "not_a_router":
-        return html`
-          <div class="notice warn">
-            This device publishes none of the entities a Solar Router does. Pick another one.
-          </div>
-        `;
+        return html` <div class="notice warn">${localize(this.hass, "editor.not_a_router")}</div> `;
       case "unknown":
-        return html`
-          <div class="notice">
-            No entity for this device yet — it may never have connected since it was added.
-          </div>
-        `;
+        return html` <div class="notice">${localize(this.hass, "editor.no_entities")}</div> `;
       case "supported":
         break;
     }
@@ -172,11 +159,17 @@ export class SolarRouterCardEditor extends LitElement {
     return html`
       <div class="recognised">
         <div class="heading">
-          <span>Recognised modules</span>
-          ${bound ? html`<span class="version">Packages ≥ ${bound}</span>` : nothing}
+          <span>${localize(this.hass, "editor.recognised")}</span>
+          ${
+            bound
+              ? html`<span class="version"
+                  >${localize(this.hass, "card.packages_at_least", { version: bound })}</span
+                >`
+              : nothing
+          }
         </div>
-        ${renderHardware(profile)}
-        ${renderModuleList(profile, states, {
+        ${renderHardware(this.hass, profile)}
+        ${renderModuleList(this.hass, profile, states, {
           showInternal: this._showInternal,
           onShowInternal: () => {
             this._showInternal = true;
@@ -218,9 +211,11 @@ export class SolarRouterCardEditor extends LitElement {
     }
     return html`
       <details class="diagnostic">
-        <summary>Diagnostic (${profile.warnings.length})</summary>
+        <summary>
+          ${localize(this.hass, "editor.diagnostic", { count: profile.warnings.length })}
+        </summary>
         <ul>
-          ${profile.warnings.map((warning) => html`<li>${warningText(warning)}</li>`)}
+          ${profile.warnings.map((warning) => html`<li>${warningText(this.hass, warning)}</li>`)}
         </ul>
       </details>
     `;

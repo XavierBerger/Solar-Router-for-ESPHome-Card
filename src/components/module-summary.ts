@@ -15,21 +15,23 @@ import type {
   PackageCategory,
   RouterProfile,
 } from "../detect/types";
+import { localize } from "../localize/localize";
+import type { HomeAssistant } from "../types/home-assistant";
 
-export const CATEGORY_LABELS: Record<PackageCategory, string> = {
-  power_meter: "Power meter",
-  engine: "Engine",
-  regulator: "Regulator",
-  energy_counter: "Energy counter",
-  temperature: "Temperature",
-  scheduler: "Scheduler",
-  system: "System",
-};
+/** Anything that only needs the language, so tests can pass a bare object. */
+type Lang = Pick<HomeAssistant, "language"> | undefined;
 
-/** A package's name, with its instance when it is one of several. */
-export function packageLabel(declared: DeclaredPackage): string {
-  const label = PACKAGES[declared.id].label;
-  return declared.instance ? `${label} ${declared.instance}` : label;
+/**
+ * A package's name, with its instance when it is one of several.
+ *
+ * The catalogue's `label` is the English fallback; the translation wins when
+ * there is one. Hardware names such as "Fronius Smart Meter" are the same in
+ * both, which is correct — they are product names, not prose.
+ */
+export function packageLabel(hass: Lang, declared: DeclaredPackage): string {
+  const label = localize(hass, `package.${declared.id}`);
+  const text = label === `package.${declared.id}` ? PACKAGES[declared.id].label : label;
+  return declared.instance ? `${text} ${declared.instance}` : text;
 }
 
 /**
@@ -60,20 +62,26 @@ export function highestVersion(
  * Regulators are joined rather than picked: a router can drive a triac and
  * three mechanical relays at once, so there is no single "the" regulator.
  */
-export function hardwareRows(profile: RouterProfile): [string, string][] {
+export function hardwareRows(hass: Lang, profile: RouterProfile): [string, string][] {
   const meter = profile.packages.find(
     (declared) =>
       PACKAGES[declared.id].category === "power_meter" && !PACKAGES[declared.id].implicit,
   );
   const rows: [string, string][] = [];
   if (profile.engine) {
-    rows.push(["Engine", PACKAGES[profile.engine].label]);
+    rows.push([
+      localize(hass, "hardware.engine"),
+      packageLabel(hass, { id: profile.engine, instance: "" } as DeclaredPackage),
+    ]);
   }
   if (meter) {
-    rows.push(["Power meter", PACKAGES[meter.id].label]);
+    rows.push([localize(hass, "hardware.power_meter"), packageLabel(hass, meter)]);
   }
   if (profile.regulators.length > 0) {
-    rows.push(["Regulator", profile.regulators.map(packageLabel).join(" · ")]);
+    rows.push([
+      localize(hass, "hardware.regulator"),
+      profile.regulators.map((regulator) => packageLabel(hass, regulator)).join(" · "),
+    ]);
   }
   return rows;
 }
@@ -85,27 +93,29 @@ export function hardwareRows(profile: RouterProfile): [string, string][] {
  * place that writes English, which is what phase 3's translation will hook
  * into.
  */
-export function warningText(warning: DetectionWarning): string {
+export function warningText(hass: Lang, warning: DetectionWarning): string {
+  const key = `warning.${warning.code}`;
   switch (warning.code) {
-    case "engine_leaf_missing":
-      return "An engine is loaded but none of the engine packages declares a version. Your packages are probably mid-update.";
-    case "engine_not_declared":
-      return "This device behaves like a router but declares no engine package.";
     case "multiple_engines":
-      return `Two engine packages are declared (${warning.engines.join(", ")}). The card uses the most specific one.`;
+      return localize(hass, key, { engines: warning.engines.join(", ") });
     case "version_format_unexpected":
-      return `${warning.entityId} does not publish a plain version number. The card read it anyway, but the firmware may have changed format.`;
+      return localize(hass, key, { entityId: warning.entityId });
     case "version_name_case_mismatch":
-      return `A package named "${warning.name}" differs from the catalogue only by capitalisation, so it was ignored.`;
+      return localize(hass, key, { name: warning.name });
     case "override_unknown_role":
-      return `The configuration pins a role the card does not know: "${warning.key}".`;
+      return localize(hass, key, { key: warning.key });
     case "override_off_device":
-      return `The configuration pins ${warning.entityId} for "${warning.role}", which is not on this device.`;
+      return localize(hass, key, { entityId: warning.entityId, role: warning.role });
+    default:
+      return localize(hass, key);
   }
 }
 
-export function renderHardware(profile: RouterProfile): TemplateResult | typeof nothing {
-  const rows = hardwareRows(profile);
+export function renderHardware(
+  hass: Lang,
+  profile: RouterProfile,
+): TemplateResult | typeof nothing {
+  const rows = hardwareRows(hass, profile);
   if (rows.length === 0) {
     return nothing;
   }
@@ -128,6 +138,7 @@ export interface ModuleListOptions {
 
 /** The package list, grouped by category, with each declared version. */
 export function renderModuleList(
+  hass: Lang,
   profile: RouterProfile,
   states: Readonly<Record<string, { readonly state: string }>>,
   options: ModuleListOptions,
@@ -142,7 +153,7 @@ export function renderModuleList(
     <div class="entities">
       ${shown.map((declared) => {
         const category = PACKAGES[declared.id].category;
-        const heading = category !== lastCategory ? CATEGORY_LABELS[category] : "";
+        const heading = category !== lastCategory ? localize(hass, `category.${category}`) : "";
         lastCategory = category;
         const { version, versionState } = readVersion(states[declared.entityId]?.state);
         return html`
@@ -150,15 +161,11 @@ export function renderModuleList(
             <span class="domain">${heading}</span>
             <span>
               <ha-icon icon=${PACKAGES[declared.id].icon}></ha-icon>
-              ${packageLabel(declared)}
+              ${packageLabel(hass, declared)}
             </span>
             <span
               class="value"
-              title=${
-                versionState === "pending"
-                  ? "Published about ten seconds after the device boots"
-                  : ""
-              }
+              title=${versionState === "pending" ? localize(hass, "card.version_pending") : ""}
               >${version ?? (versionState === "pending" ? "…" : "—")}</span
             >
           </div>
@@ -168,7 +175,11 @@ export function renderModuleList(
         internalCount > 0
           ? html`
               <button class="link" @click=${options.onShowInternal}>
-                Show ${internalCount} internal package${internalCount > 1 ? "s" : ""}
+                ${
+                  internalCount > 1
+                    ? localize(hass, "card.show_internal", { count: internalCount })
+                    : localize(hass, "card.show_internal_one")
+                }
               </button>
             `
           : nothing
@@ -179,6 +190,7 @@ export function renderModuleList(
 
 /** The same list, folded away behind a summary line. Used by the card. */
 export function renderModuleFold(
+  hass: Lang,
   profile: RouterProfile,
   states: Readonly<Record<string, { readonly state: string }>>,
   options: ModuleListOptions,
@@ -187,10 +199,16 @@ export function renderModuleFold(
   return html`
     <details class="modules">
       <summary>
-        Modules (${profile.packages.length})
-        ${bound ? html`<span class="version">Packages ≥ ${bound}</span>` : nothing}
+        ${localize(hass, "card.modules", { count: profile.packages.length })}
+        ${
+          bound
+            ? html`<span class="version"
+                >${localize(hass, "card.packages_at_least", { version: bound })}</span
+              >`
+            : nothing
+        }
       </summary>
-      ${renderModuleList(profile, states, options)}
+      ${renderModuleList(hass, profile, states, options)}
     </details>
   `;
 }

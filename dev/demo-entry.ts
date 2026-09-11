@@ -106,7 +106,7 @@ const FIXTURES: Record<string, Fixture> = { ...BASE, ...DERIVED };
  * both realistic and the only way several demo cards can share a dashboard
  * without fighting over that cache.
  */
-function buildHass(): HomeAssistant {
+function buildHass(language: string): HomeAssistant {
   const states: HomeAssistant["states"] = {};
   const devices: HomeAssistant["devices"] = {};
   const entities: HomeAssistant["entities"] = {};
@@ -155,20 +155,28 @@ function buildHass(): HomeAssistant {
     states,
     devices,
     entities,
-    language: "en",
+    language,
     callService: async () => undefined,
     callWS: async <T>() => registry as T,
   } as HomeAssistant;
 }
 
-let shared: HomeAssistant | undefined;
+/** One fake `hass` per language, so a dashboard can show both side by side. */
+const shared: Record<string, HomeAssistant> = {};
+
+function hassFor(language: string): HomeAssistant {
+  shared[language] ??= buildHass(language);
+  return shared[language];
+}
 
 @customElement("solar-router-demo-card")
 export class SolarRouterDemoCard extends LitElement {
   @property({ attribute: false }) public hass?: HomeAssistant;
   @state() private _fixture = "";
 
-  public setConfig(config: { demo?: string }): void {
+  @state() private _language = "en";
+
+  public setConfig(config: { demo?: string; lang?: string }): void {
     const name = config.demo ?? "";
     if (name && !FIXTURES[name]) {
       throw new Error(
@@ -176,6 +184,7 @@ export class SolarRouterDemoCard extends LitElement {
       );
     }
     this._fixture = name;
+    this._language = config.lang ?? "en";
   }
 
   public getCardSize(): number {
@@ -183,8 +192,7 @@ export class SolarRouterDemoCard extends LitElement {
   }
 
   protected override render(): TemplateResult {
-    shared ??= buildHass();
-    return html`<solar-router-card .hass=${shared}></solar-router-card>`;
+    return html`<solar-router-card .hass=${hassFor(this._language)}></solar-router-card>`;
   }
 
   /**
@@ -197,10 +205,11 @@ export class SolarRouterDemoCard extends LitElement {
     void customElements.whenDefined("solar-router-card").then(() => {
       const card = this.renderRoot.querySelector("solar-router-card") as
         (HTMLElement & { setConfig?: (config: unknown) => void; _demoKey?: string }) | null;
-      if (!card?.setConfig || card._demoKey === this._fixture) {
+      const key = `${this._fixture}/${this._language}`;
+      if (!card?.setConfig || card._demoKey === key) {
         return;
       }
-      card._demoKey = this._fixture;
+      card._demoKey = key;
       card.setConfig({
         device_id: FIXTURES[this._fixture]?.device.id ?? "",
         name: this._fixture,
@@ -222,8 +231,9 @@ export class SolarRouterDemoCard extends LitElement {
 export class SolarRouterDemoEditor extends LitElement {
   @property({ attribute: false }) public hass?: HomeAssistant;
   @state() private _fixture = "";
+  @state() private _language = "en";
 
-  public setConfig(config: { demo?: string }): void {
+  public setConfig(config: { demo?: string; lang?: string }): void {
     const name = config.demo ?? "";
     if (name && !FIXTURES[name]) {
       throw new Error(
@@ -231,6 +241,7 @@ export class SolarRouterDemoEditor extends LitElement {
       );
     }
     this._fixture = name;
+    this._language = config.lang ?? "en";
   }
 
   public getCardSize(): number {
@@ -238,11 +249,10 @@ export class SolarRouterDemoEditor extends LitElement {
   }
 
   protected override render(): TemplateResult {
-    shared ??= buildHass();
     return html`
-      <ha-card .header=${`Editor — ${this._fixture}`}>
+      <ha-card .header=${`Editor — ${this._fixture} (${this._language})`}>
         <div style="padding: 0 16px 16px">
-          <solar-router-card-editor .hass=${shared}></solar-router-card-editor>
+          <solar-router-card-editor .hass=${hassFor(this._language)}></solar-router-card-editor>
         </div>
       </ha-card>
     `;
@@ -252,10 +262,11 @@ export class SolarRouterDemoEditor extends LitElement {
     void customElements.whenDefined("solar-router-card-editor").then(() => {
       const editor = this.renderRoot.querySelector("solar-router-card-editor") as
         (HTMLElement & { setConfig?: (config: unknown) => void; _demoKey?: string }) | null;
-      if (!editor?.setConfig || editor._demoKey === this._fixture) {
+      const key = `${this._fixture}/${this._language}`;
+      if (!editor?.setConfig || editor._demoKey === key) {
         return;
       }
-      editor._demoKey = this._fixture;
+      editor._demoKey = key;
       editor.setConfig({
         type: "custom:solar-router-card",
         device_id: FIXTURES[this._fixture]?.device.id ?? "",

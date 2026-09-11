@@ -16,14 +16,14 @@ function profileOf(fixture: Fixture): RouterProfile {
 
 describe("the hardware rows", () => {
   it("name the engine and the measurement source", () => {
-    const rows = hardwareRows(profileOf(loadFixture("engine_1dimmer_fronius")));
+    const rows = hardwareRows(undefined, profileOf(loadFixture("engine_1dimmer_fronius")));
     expect(rows).toContainEqual(["Engine", "Progressive — one dimmer"]);
     expect(rows).toContainEqual(["Power meter", "Fronius Smart Meter"]);
   });
 
   it("join the regulators rather than picking one", () => {
     // esp8266-proxy-client drives a solid state relay and a mechanical one.
-    const rows = hardwareRows(profileOf(loadFixture("engine_1dimmer_1bypass")));
+    const rows = hardwareRows(undefined, profileOf(loadFixture("engine_1dimmer_1bypass")));
     const regulator = rows.find(([label]) => label === "Regulator")?.[1];
     expect(regulator).toContain("Solid state relay");
     expect(regulator).toContain("Mechanical relay");
@@ -31,7 +31,10 @@ describe("the hardware rows", () => {
   });
 
   it("number the mechanical relays when there are several", () => {
-    const rows = hardwareRows(profileOf(loadFixture("engine_1dimmer_2switches_1bypass")));
+    const rows = hardwareRows(
+      undefined,
+      profileOf(loadFixture("engine_1dimmer_2switches_1bypass")),
+    );
     const regulator = rows.find(([label]) => label === "Regulator")?.[1];
     expect(regulator).toContain("Mechanical relay 1");
     expect(regulator).toContain("Mechanical relay 3");
@@ -39,7 +42,7 @@ describe("the hardware rows", () => {
 
   it("say nothing at all about a device with no hardware to report", () => {
     // A bare power meter proxy has no engine and no regulator.
-    const rows = hardwareRows(profileOf(loadFixture("proxy_only")));
+    const rows = hardwareRows(undefined, profileOf(loadFixture("proxy_only")));
     expect(rows.map(([label]) => label)).toEqual(["Power meter"]);
   });
 });
@@ -50,7 +53,7 @@ describe("the package label", () => {
     const relay = profile.packages.find((p) => p.id === "regulator_mecanical_relay");
     // `regulator_mecanical_relay_` with an empty unique id must not render as
     // "Mechanical relay " with a dangling space.
-    expect(relay && packageLabel(relay)).toBe("Mechanical relay");
+    expect(relay && packageLabel(undefined, relay)).toBe("Mechanical relay");
   });
 });
 
@@ -91,7 +94,7 @@ describe("warning sentences", () => {
   ];
 
   it.each(cases)("turns $code into a sentence naming its subject", (warning) => {
-    const text = warningText(warning);
+    const text = warningText(undefined, warning);
     expect(text.length).toBeGreaterThan(20);
     expect(text).not.toContain("undefined");
     // Every code carrying a subject must put it in the sentence, otherwise the

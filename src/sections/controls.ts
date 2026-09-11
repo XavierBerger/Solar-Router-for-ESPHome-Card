@@ -14,17 +14,18 @@ import { html, nothing, type TemplateResult } from "lit";
 
 import { CATALOG } from "../detect/catalog";
 import type { Role, RouterProfile, SectionId } from "../detect/types";
+import { localize } from "../localize/localize";
 import type { HomeAssistant } from "../types/home-assistant";
 import { liveness, renderControlRow } from "../components/control-row";
 
 /** Control sections, in the order the card shows them. */
-const SECTION_ORDER: readonly { readonly id: SectionId; readonly title: string }[] = [
-  { id: "routing", title: "Routing" },
-  { id: "onoff", title: "Routing" },
-  { id: "bypass", title: "Bypass" },
-  { id: "energy", title: "Energy counter" },
-  { id: "temperature", title: "Temperature" },
-  { id: "fan", title: "Fan" },
+const SECTION_ORDER: readonly SectionId[] = [
+  "routing",
+  "onoff",
+  "bypass",
+  "energy",
+  "temperature",
+  "fan",
 ];
 
 /** Roles of a section, in catalogue order. */
@@ -39,14 +40,14 @@ function rolesOf(section: SectionId): Role[] {
  */
 function noteFor(role: Role, profile: RouterProfile, hass: HomeAssistant): string | undefined {
   if (CATALOG[role].resetsOnRestart) {
-    return "Returns to off when the router restarts";
+    return localize(hass, "note.resets_on_restart");
   }
   if (role === "router_level") {
     const activate = profile.roles.activate;
     const on = activate && hass.states[activate.entityId]?.state === "on";
     // While routing is active the engine overwrites this every cycle, so a
     // value set by hand will not stick. Say so rather than let it look broken.
-    return on ? "Driven by the router while routing is active" : undefined;
+    return on ? localize(hass, "note.router_level_driven") : undefined;
   }
   return undefined;
 }
@@ -65,28 +66,28 @@ function asideFor(role: Role, profile: RouterProfile, hass: HomeAssistant): stri
   if (liveness(entity) !== "ok") {
     return undefined;
   }
-  return `${entity.state} left`;
+  return localize(hass, "liveness.left", { value: entity.state });
 }
 
 function renderSection(
-  section: { readonly id: SectionId; readonly title: string },
+  section: SectionId,
   profile: RouterProfile,
   hass: HomeAssistant,
 ): TemplateResult | typeof nothing {
-  const roles = rolesOf(section.id).filter((role) => profile.roles[role]);
+  const roles = rolesOf(section).filter((role) => profile.roles[role]);
   if (roles.length === 0) {
     return nothing;
   }
 
   return html`
     <div class="section">
-      <div class="section-title">${section.title}</div>
+      <div class="section-title">${localize(hass, `section.${section}`)}</div>
       ${roles.map((role) => {
         const resolved = profile.roles[role];
         // `roles` was filtered on exactly this, but the compiler cannot see it.
         return resolved
           ? renderControlRow(hass, resolved, {
-              label: labelFor(role),
+              label: labelFor(hass, role),
               unit: CATALOG[role].unit,
               note: noteFor(role, profile, hass),
               aside: asideFor(role, profile, hass),
@@ -142,8 +143,11 @@ const LABELS: Partial<Record<Role, string>> = {
   safety_temperature: "Temperature",
 };
 
-function labelFor(role: Role): string {
-  return LABELS[role] ?? CATALOG[role].name;
+function labelFor(hass: Pick<HomeAssistant, "language"> | undefined, role: Role): string {
+  const translated = localize(hass, `role.${role}`);
+  // An untranslated diagnostic keeps the firmware's own name, which reads fine
+  // for the likes of "Heap Free". Controls never fall through: a test pins it.
+  return translated === `role.${role}` ? (LABELS[role] ?? CATALOG[role].name) : translated;
 }
 
 /** The main switch, which is the card's primary affordance. */
@@ -156,7 +160,9 @@ export function renderHeaderControl(
     return nothing;
   }
   return html`
-    <div class="section">${renderControlRow(hass, activate, { label: labelFor("activate") })}</div>
+    <div class="section">
+      ${renderControlRow(hass, activate, { label: labelFor(hass, "activate") })}
+    </div>
   `;
 }
 

@@ -14,6 +14,7 @@ import {
   type DeviceEntities,
 } from "./detect/registry";
 import type { RouterProfile } from "./detect/types";
+import { localize } from "./localize/localize";
 import { cardStyles } from "./styles";
 import type { HomeAssistant } from "./types/home-assistant";
 import type { SolarRouterCardConfig } from "./types/config";
@@ -125,7 +126,7 @@ export class SolarRouterCard extends LitElement {
         <ha-card>
           <div class="placeholder">
             <ha-icon icon="mdi:transmission-tower-import"></ha-icon>
-            <span>Choose the solar router this card should display.</span>
+            <span>${localize(this.hass, "card.choose_device")}</span>
           </div>
         </ha-card>
       `;
@@ -135,7 +136,7 @@ export class SolarRouterCard extends LitElement {
     if (!device) {
       return html`
         <ha-card>
-          <div class="error">Device <code>${deviceId}</code> is not in the device registry.</div>
+          <div class="error">${localize(this.hass, "card.device_missing", { deviceId })}</div>
         </ha-card>
       `;
     }
@@ -146,7 +147,9 @@ export class SolarRouterCard extends LitElement {
       return html`
         <ha-card .header=${title}>
           <div class="content">
-            <div class="error">Could not read the entity registry: ${this._registryError}</div>
+            <div class="error">
+              ${localize(this.hass, "card.registry_error", { message: this._registryError })}
+            </div>
             ${this._renderReload()}
           </div>
         </ha-card>
@@ -157,7 +160,9 @@ export class SolarRouterCard extends LitElement {
     if (!profile) {
       return html`
         <ha-card .header=${title}>
-          <div class="content"><div class="badge">Reading the entity registry…</div></div>
+          <div class="content">
+            <div class="badge">${localize(this.hass, "card.reading_registry")}</div>
+          </div>
         </ha-card>
       `;
     }
@@ -180,8 +185,8 @@ export class SolarRouterCard extends LitElement {
           ${renderControlSections(profile, this.hass)}
           ${renderSchedulerSections(profile.schedulers, this.hass)}
           <details class="advanced" ?open=${this._config.advanced_open ?? false}>
-            <summary>Advanced</summary>
-            ${renderAdvancedControls(profile, this.hass)} ${renderHardware(profile)}
+            <summary>${localize(this.hass, "card.advanced")}</summary>
+            ${renderAdvancedControls(profile, this.hass)} ${renderHardware(this.hass, profile)}
             ${this._renderModuleFold(profile)} ${renderDiagnostics(profile, this.hass)}
           </details>
         </div>
@@ -190,7 +195,9 @@ export class SolarRouterCard extends LitElement {
   }
 
   private _renderReload(): TemplateResult {
-    return html`<button class="reload" @click=${this._reload}>Reload</button>`;
+    return html`<button class="reload" @click=${this._reload}>
+      ${localize(this.hass, "card.reload")}
+    </button>`;
   }
 
   /**
@@ -209,27 +216,24 @@ export class SolarRouterCard extends LitElement {
         <div class="content">
           <div class="notice">
             <ha-icon icon="mdi:package-up"></ha-icon>
-            ${
-              disabledVersions
-                ? html`
-                    <p><strong>Your module version entities are disabled.</strong></p>
-                    <p>
-                      This router publishes them, but they are switched off in Home Assistant, so
-                      the card cannot see which modules it is built from. Re-enable them in the
-                      device settings.
-                    </p>
-                  `
-                : html`
-                    <p><strong>Update your Solar Router packages.</strong></p>
-                    <p>
-                      This card reads the module version each package publishes, which older
-                      firmware does not have. In your ESPHome configuration set
-                      <code>refresh: 0s</code>, then recompile and upload.
-                    </p>
-                  `
-            }
+            <p>
+              <strong
+                >${localize(
+                  this.hass,
+                  disabledVersions ? "card.versions_disabled_title" : "card.outdated_title",
+                )}</strong
+              >
+            </p>
+            <p>
+              ${localize(
+                this.hass,
+                disabledVersions ? "card.versions_disabled_body" : "card.outdated_body",
+              )}
+            </p>
             <div class="actions">
-              <a href=${REPOSITORY_URL} target="_blank" rel="noopener">Documentation</a>
+              <a href=${REPOSITORY_URL} target="_blank" rel="noopener"
+                >${localize(this.hass, "card.documentation")}</a
+              >
               ${this._renderReload()}
             </div>
           </div>
@@ -245,11 +249,8 @@ export class SolarRouterCard extends LitElement {
         <div class="content">
           <div class="notice">
             <ha-icon icon="mdi:help-circle-outline"></ha-icon>
-            <p><strong>This device is not a solar router.</strong></p>
-            <p>
-              <code>${deviceId}</code> publishes none of the entities a Solar Router for ESPHome
-              device does. Pick another device.
-            </p>
+            <p><strong>${localize(this.hass, "card.not_a_router_title")}</strong></p>
+            <p>${localize(this.hass, "card.not_a_router_body", { deviceId })}</p>
           </div>
         </div>
       </ha-card>
@@ -262,8 +263,8 @@ export class SolarRouterCard extends LitElement {
         <div class="content">
           <div class="notice">
             <ha-icon icon="mdi:cloud-question-outline"></ha-icon>
-            <p><strong>No entity for this device yet.</strong></p>
-            <p>It may never have connected since it was added. Reload once it is online.</p>
+            <p><strong>${localize(this.hass, "card.no_entities_title")}</strong></p>
+            <p>${localize(this.hass, "card.no_entities_body")}</p>
             <div class="actions">${this._renderReload()}</div>
           </div>
         </div>
@@ -287,13 +288,13 @@ export class SolarRouterCard extends LitElement {
     return html`
       <div class="badge">
         <span class="dot ${online ? "" : "offline"}"></span>
-        <span>${online ? "Online" : "Offline"}</span>
+        <span>${localize(this.hass, online ? "card.online" : "card.offline")}</span>
       </div>
     `;
   }
 
   private _renderModuleFold(profile: RouterProfile): TemplateResult {
-    return renderModuleFold(profile, this.hass?.states ?? {}, {
+    return renderModuleFold(this.hass, profile, this.hass?.states ?? {}, {
       showInternal: this._showInternal,
       onShowInternal: () => {
         this._showInternal = true;
@@ -312,7 +313,9 @@ export class SolarRouterCard extends LitElement {
 
     return html`
       <details>
-        <summary>Entities on this device (${entities.length})</summary>
+        <summary>
+          ${localize(this.hass, "card.entities_on_device", { count: entities.length })}
+        </summary>
         <div class="entities">
           ${entities.map(
             (entity) => html`

@@ -47,6 +47,24 @@ views:
       - type: custom:solar-router-demo-card
         demo: versions_disabled
 
+  # The same router in both languages, so a translation gap shows up as a
+  # difference rather than as a key nobody notices.
+  - title: Français
+    path: francais
+    cards:
+      - type: custom:solar-router-demo-card
+        demo: engine_1dimmer_2switches_1bypass
+        lang: fr
+      - type: custom:solar-router-demo-card
+        demo: engine_1switch_ha_limiter
+        lang: fr
+      - type: custom:solar-router-demo-card
+        demo: legacy_no_versions
+        lang: fr
+      - type: custom:solar-router-demo-editor
+        demo: engine_1dimmer_fan
+        lang: fr
+
   # The GUI editor, mounted directly against a fixture. In YAML mode Home
   # Assistant never opens a card editor, so this is the only way to see it here.
   - title: Editor
