@@ -2,6 +2,8 @@ import { LitElement, html, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { renderHardware, renderModuleFold } from "./components/module-summary";
+import { renderControlSections, renderHeaderControl } from "./sections/controls";
+import { renderSchedulerSections } from "./sections/scheduler";
 import { CARD_NAME, CARD_TYPE, CARD_VERSION, REPOSITORY_URL } from "./const";
 import { detectRouter } from "./detect/detect";
 import { matchVersionEntity } from "./detect/packages";
@@ -173,8 +175,13 @@ export class SolarRouterCard extends LitElement {
     return html`
       <ha-card .header=${title}>
         <div class="content">
-          ${this._renderStatus(profile)} ${renderHardware(profile)}
-          ${this._renderModuleFold(profile)}
+          ${this._renderStatus(profile)} ${renderHeaderControl(profile, this.hass)}
+          ${renderControlSections(profile, this.hass)}
+          ${renderSchedulerSections(profile.schedulers, this.hass)}
+          <details class="advanced" ?open=${this._config.advanced_open ?? false}>
+            <summary>Advanced</summary>
+            ${renderHardware(profile)} ${this._renderModuleFold(profile)}
+          </details>
         </div>
       </ha-card>
     `;

@@ -207,6 +207,79 @@ export const cardStyles = css`
       display: none;
     }
   }
+
+  /* Control sections. */
+  .section {
+    margin-top: 14px;
+  }
+
+  .section-title {
+    font-weight: 500;
+    color: var(--primary-text-color, #212121);
+    margin-bottom: 6px;
+  }
+
+  .control-row {
+    display: grid;
+    grid-template-columns: minmax(8em, 14em) 1fr;
+    gap: 8px 12px;
+    align-items: center;
+    padding: 4px 0;
+  }
+
+  .control-label {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .control-label .note {
+    color: var(--secondary-text-color, #727272);
+    font-size: 0.82em;
+    line-height: 1.3;
+  }
+
+  .control-value {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .control-value ha-selector {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .readout {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .aside,
+  .dim {
+    color: var(--secondary-text-color, #727272);
+    font-size: 0.9em;
+  }
+
+  .advanced {
+    margin-top: 18px;
+    border-top: 1px solid var(--divider-color, #e0e0e0);
+    padding-top: 10px;
+  }
+
+  .advanced > summary {
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  @media (max-width: 450px) {
+    .control-row {
+      grid-template-columns: 1fr;
+    }
+
+    .control-value {
+      justify-content: flex-start;
+    }
+  }
 `;
 
 /**
