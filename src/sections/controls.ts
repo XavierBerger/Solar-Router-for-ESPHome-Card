@@ -126,6 +126,15 @@ const LABELS: Partial<Record<Role, string>> = {
   // `Energy divertion Realy 3 Bypass` carries a typo that is public API and
   // must stay misspelled in the catalogue, and `safety_temperature` is the one
   // name the firmware left uncapitalised.
+  up_reactivity: "Up reactivity",
+  down_reactivity: "Down reactivity",
+  regulator_opening: "Regulator opening",
+  relay_1_countdown: "Relay 1 countdown",
+  relay_2_countdown: "Relay 2 countdown",
+  relay_3_countdown: "Relay 3 countdown",
+  green_led: "Green LED",
+  yellow_led: "Yellow LED",
+  restart: "Restart",
   energy_divertion: "Diverting energy",
   energy_divertion_relay_1: "Diverting to relay 1",
   energy_divertion_relay_2: "Diverting to relay 2",

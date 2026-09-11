@@ -266,9 +266,28 @@ export const cardStyles = css`
     padding-top: 10px;
   }
 
-  .advanced > summary {
+  .advanced > summary,
+  .diagnostics > summary,
+  .modules > summary {
     cursor: pointer;
     font-weight: 500;
+  }
+
+  .diagnostics {
+    margin-top: 12px;
+  }
+
+  /* Diagnostics are readouts, so they need no room for a control. */
+  .diagnostics .control-row {
+    grid-template-columns: 1fr auto;
+    padding: 1px 0;
+    font-size: 0.9em;
+  }
+
+  .diagnostics .section-title {
+    margin-top: 8px;
+    font-weight: 400;
+    color: var(--secondary-text-color, #727272);
   }
 
   @media (max-width: 450px) {

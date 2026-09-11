@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { liveness, livenessText } from "../../src/components/control-row";
+import { DIAGNOSTIC_GROUPS } from "../../src/sections/advanced";
 import { CONTROL_SECTIONS, ROLE_LABELS, labelFor, rolesOf } from "../../src/sections/controls";
 import { CATALOG } from "../../src/detect/catalog";
 import { detectRouter } from "../../src/detect/detect";
@@ -95,6 +96,42 @@ describe("every control section is reachable", () => {
     const profile = profileOf(loadFixture("proxy_only"));
     for (const section of CONTROL_SECTIONS) {
       expect(rolesOf(section.id).some((role) => profile.roles[role])).toBe(false);
+    }
+  });
+});
+
+describe("the advanced section", () => {
+  it("has a group for every diagnostic role, so none can vanish", () => {
+    // A diagnostics role whose owner is missing from the groups would simply
+    // not be rendered — no error, no gap, just gone.
+    const grouped = new Set(DIAGNOSTIC_GROUPS.map((group) => group.owner));
+    const owners = (Object.keys(CATALOG) as Role[])
+      .filter((role) => CATALOG[role].section === "diagnostics")
+      .map((role) => CATALOG[role].owner);
+    for (const owner of new Set(owners)) {
+      expect(grouped).toContain(owner);
+    }
+  });
+
+  it("labels every control a user can act on in Advanced", () => {
+    const advanced = (Object.keys(CATALOG) as Role[]).filter(
+      (role) => CATALOG[role].section === "advanced",
+    );
+    expect(advanced.length).toBeGreaterThan(0);
+    for (const role of advanced) {
+      expect(Object.keys(ROLE_LABELS)).toContain(role);
+    }
+  });
+
+  it("renders the regulator opening read-only when the engine publishes a sensor", () => {
+    // engine_1dimmer makes it a number; the other dimmer engines a sensor.
+    // Whichever resolved decides, which is why `writable` is carried through.
+    for (const name of REAL) {
+      const profile = profileOf(loadFixture(name));
+      const role = profile.roles.regulator_opening;
+      if (role) {
+        expect(role.writable).toBe(role.domain === "number");
+      }
     }
   });
 });
