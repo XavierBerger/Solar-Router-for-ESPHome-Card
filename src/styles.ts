@@ -208,3 +208,119 @@ export const cardStyles = css`
     }
   }
 `;
+
+/**
+ * The GUI editor.
+ *
+ * Rendered inside Home Assistant's own configuration dialog rather than in a
+ * card, so it borrows the dialog's spacing and only styles what it adds.
+ */
+export const editorStyles = css`
+  :host {
+    display: block;
+  }
+
+  .notice {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--secondary-background-color, #f5f5f5);
+    line-height: 1.4;
+  }
+
+  .notice.warn {
+    border-left: 4px solid var(--warning-color, #ffa600);
+  }
+
+  .notice.error {
+    border-left: 4px solid var(--error-color, #db4437);
+  }
+
+  .recognised {
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--secondary-background-color, #f5f5f5);
+  }
+
+  .heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .heading .version,
+  .modules summary .version {
+    color: var(--secondary-text-color, #727272);
+    font-size: 0.9em;
+    font-weight: 400;
+  }
+
+  .hardware {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .hardware .row {
+    display: grid;
+    grid-template-columns: 9em 1fr;
+    gap: 8px;
+  }
+
+  .hardware .label {
+    color: var(--secondary-text-color, #727272);
+  }
+
+  .entities {
+    display: grid;
+    gap: 2px;
+  }
+
+  .entity {
+    display: grid;
+    grid-template-columns: 8em 1fr auto;
+    gap: 8px;
+    font-size: 0.9em;
+  }
+
+  .entity .domain {
+    color: var(--secondary-text-color, #727272);
+  }
+
+  .entity ha-icon {
+    --mdc-icon-size: 18px;
+    color: var(--state-icon-color, #44739e);
+    margin-right: 4px;
+  }
+
+  button.link {
+    margin-top: 8px;
+    padding: 4px 0;
+    border: none;
+    background: none;
+    color: var(--primary-color, #03a9f4);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .diagnostic {
+    margin-top: 10px;
+    font-size: 0.9em;
+  }
+
+  .diagnostic ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 450px) {
+    .hardware .row,
+    .entity {
+      grid-template-columns: 1fr;
+    }
+  }
+`;

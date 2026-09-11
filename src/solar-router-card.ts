@@ -1,28 +1,19 @@
-import { LitElement, html, nothing, type TemplateResult } from "lit";
+import { LitElement, html, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import { renderHardware, renderModuleFold } from "./components/module-summary";
 import { CARD_NAME, CARD_TYPE, CARD_VERSION, REPOSITORY_URL } from "./const";
 import { detectRouter } from "./detect/detect";
-import { PACKAGES, compareVersions, matchVersionEntity, readVersion } from "./detect/packages";
+import { matchVersionEntity } from "./detect/packages";
 import {
   invalidateEntityRegistry,
   loadDeviceEntities,
   type DeviceEntities,
 } from "./detect/registry";
-import type { DeclaredPackage, PackageCategory, RouterProfile } from "./detect/types";
+import type { RouterProfile } from "./detect/types";
 import { cardStyles } from "./styles";
 import type { HomeAssistant } from "./types/home-assistant";
 import type { SolarRouterCardConfig } from "./types/config";
-
-const CATEGORY_LABELS: Record<PackageCategory, string> = {
-  power_meter: "Power meter",
-  engine: "Engine",
-  regulator: "Regulator",
-  energy_counter: "Energy counter",
-  temperature: "Temperature",
-  scheduler: "Scheduler",
-  system: "System",
-};
 
 @customElement(CARD_TYPE)
 export class SolarRouterCard extends LitElement {
@@ -53,6 +44,19 @@ export class SolarRouterCard extends LitElement {
 
   public static getStubConfig(): Partial<SolarRouterCardConfig> {
     return { device_id: "" };
+  }
+
+  /**
+   * The GUI editor.
+   *
+   * Written as a dynamic import because that is the shape Home Assistant
+   * documents, but the bundle inlines it: HACS installs a single file, so
+   * there is nowhere for a second chunk to live. The editor therefore ships
+   * with the card rather than loading on demand.
+   */
+  public static async getConfigElement(): Promise<HTMLElement> {
+    await import("./editor");
+    return document.createElement("solar-router-card-editor");
   }
 
   private _reset(): void {
@@ -169,8 +173,8 @@ export class SolarRouterCard extends LitElement {
     return html`
       <ha-card .header=${title}>
         <div class="content">
-          ${this._renderStatus(profile)} ${this._renderHardware(profile)}
-          ${this._renderModules(profile)}
+          ${this._renderStatus(profile)} ${renderHardware(profile)}
+          ${this._renderModuleFold(profile)}
         </div>
       </ha-card>
     `;
@@ -279,122 +283,13 @@ export class SolarRouterCard extends LitElement {
     `;
   }
 
-  /** Engine, measurement source and regulators — none of it knowable before. */
-  private _renderHardware(profile: RouterProfile): TemplateResult {
-    const meter = profile.packages.find(
-      (p) => PACKAGES[p.id].category === "power_meter" && !PACKAGES[p.id].implicit,
-    );
-    const rows: [string, string][] = [];
-    if (profile.engine) {
-      rows.push(["Engine", PACKAGES[profile.engine].label]);
-    }
-    if (meter) {
-      rows.push(["Power meter", PACKAGES[meter.id].label]);
-    }
-    if (profile.regulators.length > 0) {
-      rows.push(["Regulator", profile.regulators.map((r) => this._packageLabel(r)).join(" · ")]);
-    }
-    if (rows.length === 0) {
-      return html`${nothing}`;
-    }
-
-    return html`
-      <div class="hardware">
-        ${rows.map(
-          ([label, value]) => html`
-            <div class="row"><span class="label">${label}</span><span>${value}</span></div>
-          `,
-        )}
-      </div>
-    `;
-  }
-
-  private _packageLabel(declared: DeclaredPackage): string {
-    const label = PACKAGES[declared.id].label;
-    return declared.instance ? `${label} ${declared.instance}` : label;
-  }
-
-  /**
-   * The declared packages and their versions.
-   *
-   * Versions are shown, never judged. A release only bumps the packages it
-   * touched, so uneven versions are normal and flagging the laggards would cry
-   * wolf on every installation. For the same reason the highest version is
-   * labelled with a `≥`: it is a lower bound on the release, not the release.
-   */
-  private _renderModules(profile: RouterProfile): TemplateResult {
-    const states = this.hass?.states ?? {};
-    const shown = profile.packages.filter(
-      (declared) => this._showInternal || !PACKAGES[declared.id].implicit,
-    );
-    const internalCount = profile.packages.length - shown.length;
-
-    let lastCategory: PackageCategory | undefined;
-    const bound = this._highestVersion(profile, states);
-
-    return html`
-      <details class="modules">
-        <summary>
-          Modules (${profile.packages.length})
-          ${bound ? html`<span class="version">Packages ≥ ${bound}</span>` : nothing}
-        </summary>
-        <div class="entities">
-          ${shown.map((declared) => {
-            const category = PACKAGES[declared.id].category;
-            const heading = category !== lastCategory ? CATEGORY_LABELS[category] : "";
-            lastCategory = category;
-            const { version, versionState } = readVersion(states[declared.entityId]?.state);
-            return html`
-              <div class="entity">
-                <span class="domain">${heading}</span>
-                <span>
-                  <ha-icon icon=${PACKAGES[declared.id].icon}></ha-icon>
-                  ${this._packageLabel(declared)}
-                </span>
-                <span
-                  class="value"
-                  title=${
-                    versionState === "pending"
-                      ? "Published about ten seconds after the device boots"
-                      : ""
-                  }
-                  >${version ?? (versionState === "pending" ? "…" : "—")}</span
-                >
-              </div>
-            `;
-          })}
-          ${
-            internalCount > 0
-              ? html`
-                  <button class="link" @click=${() => (this._showInternal = true)}>
-                    Show ${internalCount} internal package${internalCount > 1 ? "s" : ""}
-                  </button>
-                `
-              : nothing
-          }
-        </div>
-      </details>
-    `;
-  }
-
-  /**
-   * Highest version currently published.
-   *
-   * Recomputed here rather than taken from `profile.packagesVersion`: the
-   * profile is built from the registry alone, so it carries no version at all.
-   */
-  private _highestVersion(
-    profile: RouterProfile,
-    states: Record<string, { state: string }>,
-  ): string | null {
-    let best: string | null = null;
-    for (const declared of profile.packages) {
-      const { version } = readVersion(states[declared.entityId]?.state);
-      if (version && (!best || compareVersions(version, best) === 1)) {
-        best = version;
-      }
-    }
-    return best;
+  private _renderModuleFold(profile: RouterProfile): TemplateResult {
+    return renderModuleFold(profile, this.hass?.states ?? {}, {
+      showInternal: this._showInternal,
+      onShowInternal: () => {
+        this._showInternal = true;
+      },
+    });
   }
 
   /** The raw entity list, kept for the screens that render no controls. */

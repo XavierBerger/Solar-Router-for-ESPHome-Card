@@ -14,6 +14,9 @@ const production = {
     file: "dist/solar-router-card.js",
     format: "es",
     sourcemap: dev,
+    // HACS installs one file and nothing beside it, so the editor's dynamic
+    // import has to be folded back in rather than split into a second chunk.
+    inlineDynamicImports: true,
   },
   plugins: [
     resolve(),
