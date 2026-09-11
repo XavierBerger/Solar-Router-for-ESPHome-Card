@@ -47,6 +47,18 @@ views:
       - type: custom:solar-router-demo-card
         demo: versions_disabled
 
+  # The GUI editor, mounted directly against a fixture. In YAML mode Home
+  # Assistant never opens a card editor, so this is the only way to see it here.
+  - title: Editor
+    path: editor
+    cards:
+      - type: custom:solar-router-demo-editor
+        demo: engine_1dimmer_2switches_1bypass
+      - type: custom:solar-router-demo-editor
+        demo: proxy_only
+      - type: custom:solar-router-demo-editor
+        demo: legacy_no_versions
+
   # The production card, against whatever is really in this instance. With no
   # ESPHome router around it shows the "pick a device" and "not a router"
   # states, which is exactly what it should do.

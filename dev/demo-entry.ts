@@ -209,7 +209,68 @@ export class SolarRouterDemoCard extends LitElement {
   }
 }
 
+/**
+ * The GUI editor, mounted directly.
+ *
+ * The development dashboard runs in YAML mode, where Home Assistant never opens
+ * a card's editor, so this is the only way to see it without first creating a
+ * storage-mode dashboard by hand. It exercises the editor's own rendering; the
+ * round trip through Home Assistant's configuration dialog still needs a real
+ * dashboard.
+ */
+@customElement("solar-router-demo-editor")
+export class SolarRouterDemoEditor extends LitElement {
+  @property({ attribute: false }) public hass?: HomeAssistant;
+  @state() private _fixture = "";
+
+  public setConfig(config: { demo?: string }): void {
+    const name = config.demo ?? "";
+    if (name && !FIXTURES[name]) {
+      throw new Error(
+        `Unknown demo fixture "${name}". Try one of: ${Object.keys(FIXTURES).join(", ")}`,
+      );
+    }
+    this._fixture = name;
+  }
+
+  public getCardSize(): number {
+    return 6;
+  }
+
+  protected override render(): TemplateResult {
+    shared ??= buildHass();
+    return html`
+      <ha-card .header=${`Editor — ${this._fixture}`}>
+        <div style="padding: 0 16px 16px">
+          <solar-router-card-editor .hass=${shared}></solar-router-card-editor>
+        </div>
+      </ha-card>
+    `;
+  }
+
+  protected override updated(): void {
+    void customElements.whenDefined("solar-router-card-editor").then(() => {
+      const editor = this.renderRoot.querySelector("solar-router-card-editor") as
+        (HTMLElement & { setConfig?: (config: unknown) => void; _demoKey?: string }) | null;
+      if (!editor?.setConfig || editor._demoKey === this._fixture) {
+        return;
+      }
+      editor._demoKey = this._fixture;
+      editor.setConfig({
+        type: "custom:solar-router-card",
+        device_id: FIXTURES[this._fixture]?.device.id ?? "",
+      });
+    });
+  }
+}
+
 window.customCards = window.customCards ?? [];
+window.customCards.push({
+  type: "solar-router-demo-editor",
+  name: "Solar Router Card editor (demo)",
+  description: "Mounts the GUI editor against a bundled fixture. Development builds only.",
+  preview: false,
+});
 window.customCards.push({
   type: "solar-router-demo-card",
   name: "Solar Router Card (demo)",
