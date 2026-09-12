@@ -69,7 +69,9 @@ impl Simulation {
     }
 
     pub fn simulated_seconds(&self, real_elapsed_seconds: f64) -> f64 {
-        self.start_time_seconds + real_elapsed_seconds.max(0.0) * self.acceleration
+        let elapsed_seconds = real_elapsed_seconds.max(0.0).floor();
+
+        self.start_time_seconds + elapsed_seconds * self.acceleration
     }
 
     pub fn sample_real_elapsed(&self, real_elapsed_seconds: f64) -> Sample {
@@ -273,6 +275,47 @@ mod tests {
     fn time_acceleration_maps_real_seconds_to_simulated_day() {
         let sim = simulation();
         assert_eq!(sim.simulated_seconds(300.0), 64_800.0);
+    }
+
+    #[test]
+    fn simulation_uses_one_second_real_time_ticks() {
+        let sim = simulation();
+
+        assert_eq!(
+            sim.simulated_seconds(0.1),
+            sim.simulated_seconds(0.0)
+        );
+
+        assert_eq!(
+            sim.simulated_seconds(0.9),
+            sim.simulated_seconds(0.0)
+        );
+
+        assert_eq!(
+            sim.simulated_seconds(1.0) - sim.simulated_seconds(0.0),
+            144.0
+        );
+
+        assert_eq!(
+            sim.simulated_seconds(1.9) - sim.simulated_seconds(0.0),
+            144.0
+        );
+
+        assert_eq!(
+            sim.simulated_seconds(2.0) - sim.simulated_seconds(0.0),
+            288.0
+        );
+    }
+
+    #[test]
+    fn accelerated_day_completes_after_configured_real_duration() {
+        let sim = simulation();
+
+        // 600 real seconds = one simulated day.
+        assert_eq!(
+            sim.simulated_seconds(600.0) - sim.simulated_seconds(0.0),
+            86_400.0
+        );
     }
 
     #[test]
