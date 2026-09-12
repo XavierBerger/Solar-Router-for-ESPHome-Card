@@ -13,6 +13,7 @@ This project provides a minimal Docker-based development environment for Home As
 
    ```bash
    cd docker
+   docker compose build fronius-simulator
    docker compose up -d
    ```
 
@@ -31,11 +32,22 @@ From the directory `docker`
 
 | Command                  | Description                            |
 | ------------------------ | -------------------------------------- |
+| `docker compose build fronius-simulator` | Build the Fronius simulator service |
 | `docker compose up -d`   | Start the container in detached mode   |
 | `docker compose down`    | Stop the container (preserves data)    |
 | `docker compose down -v` | Stop and remove all data (clean slate) |
 | `docker compose logs -f` | View container logs in real-time       |
 | `docker compose restart` | Restart the container                  |
+
+## Fronius Simulator
+
+The development Docker environment also starts a Rust-based Fronius Solar API simulator. It is available to Home Assistant at:
+
+```text
+http://fronius-simulator:8080
+```
+
+Use that URL when adding the Home Assistant Fronius integration in the development container. See [Fronius Simulator](FRONIUS_SIMULATOR.md) for the endpoint reference, simulation model, and speed controls.
 
 ## Configuration Persistence
 
