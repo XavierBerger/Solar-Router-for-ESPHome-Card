@@ -1,6 +1,8 @@
+use serde::Serialize;
+
 use crate::simulation::{Sample, Simulation, DAY_SECONDS};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct DayData {
     pub step_seconds: u64,
     pub sample_count: usize,
@@ -9,7 +11,7 @@ pub struct DayData {
     pub samples: Vec<DaySample>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct DaySummary {
     pub pv_energy_wh: f64,
     pub load_energy_wh: f64,
@@ -17,7 +19,7 @@ pub struct DaySummary {
     pub grid_export_wh: f64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct DaySample {
     pub time: String,
     pub sim_time_seconds: f64,
@@ -42,14 +44,10 @@ impl DayData {
             .map(DaySample::from)
             .collect::<Vec<_>>();
 
-        let final_sample = samples
-            .last()
-            .expect("a full day must contain at least one sample");
         let pv_energy_wh = simulation.pv_energy_until(DAY_SECONDS);
-        let load_energy_wh = pv_energy_wh + simulation
-            .sample_at_simulated_seconds(DAY_SECONDS)
-            .grid_import_total_wh
-            - simulation.sample_at_simulated_seconds(DAY_SECONDS).grid_export_total_wh;
+        let grid_import_wh = simulation.grid_import_energy_until(DAY_SECONDS);
+        let grid_export_wh = simulation.grid_export_energy_until(DAY_SECONDS);
+        let load_energy_wh = pv_energy_wh + grid_import_wh - grid_export_wh;
 
         Self {
             step_seconds,
@@ -58,8 +56,8 @@ impl DayData {
             summary: DaySummary {
                 pv_energy_wh,
                 load_energy_wh,
-                grid_import_wh: final_sample.grid_import_total_wh,
-                grid_export_wh: final_sample.grid_export_total_wh,
+                grid_import_wh,
+                grid_export_wh,
             },
             samples,
         }
