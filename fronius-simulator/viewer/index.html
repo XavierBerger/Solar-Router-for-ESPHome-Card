@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Router - Simulation Day Viewer</title>
+    <link rel="stylesheet" href="./lib/uplot/uPlot.min.css">
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <h1>Solar Router - Visualisation Énergétique (Phase 1)</h1>
+            <div id="status-indicator" class="status-badge loading">Chargement...</div>
+        </div>
+        <div id="meta-info" class="meta-info">--</div>
+    </header>
+
+    <main class="dashboard-container">
+        <!-- Banner Erreur -->
+        <div id="error-banner" class="error-banner hidden">
+            <span id="error-message"></span>
+            <button id="retry-btn">Réessayer</button>
+        </div>
+
+        <!-- Controls Toolbar -->
+        <div class="toolbar">
+            <button id="reset-zoom-btn" class="btn">Réinitialiser le zoom</button>
+            <div class="kpi-container">
+                <div class="kpi-card"><span class="kpi-label">Production PV:</span> <span id="kpi-pv"
+                        class="kpi-value">-- Wh</span></div>
+                <div class="kpi-card"><span class="kpi-label">Consommation:</span> <span id="kpi-load"
+                        class="kpi-value">-- Wh</span></div>
+                <div class="kpi-card"><span class="kpi-label">Autoconsommation:</span> <span id="kpi-autocons"
+                        class="kpi-value">-- %</span></div>
+                <div class="kpi-card"><span class="kpi-label">Autonomie:</span> <span id="kpi-autonomy"
+                        class="kpi-value">-- %</span></div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-wrapper">
+            <!-- Main Chart: Production vs Consumption (70% Height) -->
+            <div class="chart-box main-chart-box">
+                <div class="chart-header">
+                    <h2>Production Solaire & Décomposition de Consommation (W)</h2>
+                </div>
+                <div id="main-chart" class="chart-container"></div>
+            </div>
+
+            <!-- Grid Chart: Grid Import / Export (30% Height) -->
+            <div class="chart-box grid-chart-box">
+                <div class="chart-header">
+                    <h2>Échanges Réseau : Export (+) / Import (-) (W)</h2>
+                </div>
+                <div id="grid-chart" class="chart-container"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="./lib/uplot/uPlot.iife.min.js"></script>
+    <script type="module" src="./viewer.js"></script>
+</body>
+
+</html>

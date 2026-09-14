@@ -8,6 +8,7 @@ use axum::{
 use chrono::{SecondsFormat, Utc};
 use serde::Deserialize;
 use serde_json::{Value, json};
+use tower_http::services::ServeDir;
 
 use crate::{
     config::Config,
@@ -41,7 +42,7 @@ impl AppState {
 pub fn router(config: Config) -> Router {
     let state = Arc::new(AppState::new(config));
 
-    Router::new()
+    let api_routes = Router::new()
         .route("/solar_api/GetAPIVersion.cgi", get(api_version))
         .route("/solar_api/v1/GetLoggerInfo.cgi", get(logger_info))
         .route("/solar_api/v1/GetInverterInfo.cgi", get(inverter_info))
@@ -70,7 +71,10 @@ pub fn router(config: Config) -> Router {
             get(active_device_info),
         )
         .route("/simulation/day", get(simulation_day))
-        .with_state(state)
+        .with_state(state);
+
+    // Servir le dossier viewer sur / tout en préservant les routes API
+    api_routes.fallback_service(ServeDir::new("viewer"))
 }
 
 async fn simulation_day(State(state): State<Arc<AppState>>) -> Json<DayData> {
