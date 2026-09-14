@@ -44,12 +44,10 @@ impl DayData {
             .map(DaySample::from)
             .collect::<Vec<_>>();
 
-        let final_sample = samples
-            .last()
-            .expect("a full day must contain at least one sample");
-        let pv_energy_wh = simulation.pv_energy_until(DAY_SECONDS);
-        let grid_import_wh = final_sample.grid_import_total_wh;
-        let grid_export_wh = final_sample.grid_export_total_wh;
+        let end_of_day = simulation.sample_at_simulated_seconds(DAY_SECONDS);
+        let pv_energy_wh = end_of_day.energy_day_wh;
+        let grid_import_wh = end_of_day.grid_import_total_wh;
+        let grid_export_wh = end_of_day.grid_export_total_wh;
         let load_energy_wh = pv_energy_wh + grid_import_wh - grid_export_wh;
 
         Self {
@@ -105,11 +103,16 @@ mod tests {
 
     #[test]
     fn day_data_has_api_friendly_metadata_and_summary() {
-        let day = DayData::from_simulation(&simulation(), 60);
+        let simulation = simulation();
+        let day = DayData::from_simulation(&simulation, 60);
+        let end_of_day = simulation.sample_at_simulated_seconds(86_400.0);
 
         assert_eq!(day.step_seconds, 60);
         assert_eq!(day.sample_count, 1_440);
         assert_eq!(day.duration_seconds, 86_400);
+        assert!((day.summary.pv_energy_wh - end_of_day.energy_day_wh).abs() < 1e-9);
+        assert!((day.summary.grid_import_wh - end_of_day.grid_import_total_wh).abs() < 1e-9);
+        assert!((day.summary.grid_export_wh - end_of_day.grid_export_total_wh).abs() < 1e-9);
         assert!(day.summary.pv_energy_wh > 0.0);
         assert!(day.summary.load_energy_wh > 0.0);
         assert!(day.summary.grid_import_wh > 0.0);
