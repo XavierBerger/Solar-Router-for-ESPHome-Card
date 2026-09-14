@@ -11,6 +11,7 @@ use serde_json::{Value, json};
 
 use crate::{
     config::Config,
+    day::DayData,
     simulation::{Sample, Simulation},
 };
 
@@ -68,7 +69,12 @@ pub fn router(config: Config) -> Router {
             "/solar_api/v1/GetActiveDeviceInfo.cgi",
             get(active_device_info),
         )
+        .route("/simulation/day", get(simulation_day))
         .with_state(state)
+}
+
+async fn simulation_day(State(state): State<Arc<AppState>>) -> Json<DayData> {
+    Json(DayData::from_simulation(&state.simulation, 60))
 }
 
 async fn api_version() -> Json<Value> {
@@ -426,6 +432,17 @@ mod tests {
         assert!(response.status().is_success());
         let bytes = response.into_body().collect().await.unwrap().to_bytes();
         serde_json::from_slice(&bytes).unwrap()
+    }
+
+    #[tokio::test]
+    async fn simulation_day_returns_full_day_data() {
+        let body = get_json("/simulation/day").await;
+        assert_eq!(body["step_seconds"], 60);
+        assert_eq!(body["sample_count"], 1_440);
+        assert_eq!(body["duration_seconds"], 86_400);
+        assert_eq!(body["samples"][0]["time"], "00:00");
+        assert_eq!(body["samples"][1_439]["time"], "23:59");
+        assert!(body["summary"]["pv_energy_wh"].as_f64().unwrap() > 0.0);
     }
 
     #[tokio::test]
