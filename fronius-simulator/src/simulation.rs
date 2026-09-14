@@ -126,6 +126,21 @@ impl Simulation {
         }
     }
 
+    pub fn sample_day(&self, step_seconds: u64) -> Vec<Sample> {
+        assert!(step_seconds > 0, "day sample step must be greater than zero");
+
+        let step_seconds = step_seconds as f64;
+        let mut samples = Vec::new();
+        let mut day_seconds = 0.0;
+
+        while day_seconds < DAY_SECONDS {
+            samples.push(self.sample_at_simulated_seconds(day_seconds));
+            day_seconds += step_seconds;
+        }
+
+        samples
+    }
+
     pub fn pv_power(&self, day_seconds: f64) -> f64 {
         if !(SUNRISE_SECONDS..=SUNSET_SECONDS).contains(&day_seconds) {
             return 0.0;
@@ -233,7 +248,7 @@ fn percent(value: f64) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{InverterStatus, Simulation};
+    use super::{InverterStatus, Simulation, DAY_SECONDS};
     use crate::config::Config;
     use std::time::Duration;
 
@@ -316,6 +331,38 @@ mod tests {
             sim.simulated_seconds(600.0) - sim.simulated_seconds(0.0),
             86_400.0
         );
+    }
+
+    #[test]
+    fn day_sampling_returns_every_minute_from_midnight_to_2359() {
+        let sim = simulation();
+        let samples = sim.sample_day(60);
+
+        assert_eq!(samples.len(), 1_440);
+        assert_eq!(samples.first().unwrap().day_seconds, 0.0);
+        assert_eq!(samples.last().unwrap().day_seconds, DAY_SECONDS - 60.0);
+        assert_eq!(samples.first().unwrap().sim_time_seconds, 0.0);
+        assert_eq!(samples.last().unwrap().sim_time_seconds, DAY_SECONDS - 60.0);
+    }
+
+    #[test]
+    fn day_sampling_reuses_the_existing_simulation_model() {
+        let sim = simulation();
+        let samples = sim.sample_day(60);
+
+        assert_eq!(samples[120].day_seconds, 2.0 * 3_600.0);
+        assert_eq!(samples[120].pv_power_w, 0.0);
+        assert_eq!(samples[360].day_seconds, 6.0 * 3_600.0);
+        assert_eq!(samples[360].pv_power_w, 0.0);
+        assert!(samples[750].pv_power_w > 0.0);
+        assert!(samples[750].energy_day_wh > samples[700].energy_day_wh);
+        assert!(samples[1_439].energy_day_wh >= samples[750].energy_day_wh);
+    }
+
+    #[test]
+    #[should_panic(expected = "day sample step must be greater than zero")]
+    fn day_sampling_rejects_a_zero_step() {
+        simulation().sample_day(0);
     }
 
     #[test]
