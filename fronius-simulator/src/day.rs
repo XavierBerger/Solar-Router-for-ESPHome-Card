@@ -44,9 +44,12 @@ impl DayData {
             .map(DaySample::from)
             .collect::<Vec<_>>();
 
+        let final_sample = samples
+            .last()
+            .expect("a full day must contain at least one sample");
         let pv_energy_wh = simulation.pv_energy_until(DAY_SECONDS);
-        let grid_import_wh = simulation.grid_import_energy_until(DAY_SECONDS);
-        let grid_export_wh = simulation.grid_export_energy_until(DAY_SECONDS);
+        let grid_import_wh = final_sample.grid_import_total_wh;
+        let grid_export_wh = final_sample.grid_export_total_wh;
         let load_energy_wh = pv_energy_wh + grid_import_wh - grid_export_wh;
 
         Self {
