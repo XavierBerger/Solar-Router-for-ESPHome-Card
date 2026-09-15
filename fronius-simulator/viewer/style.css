@@ -4,18 +4,18 @@
     --border-color: #334155;
     --text-color: #f8fafc;
     --text-muted: #94a3b8;
-    
+
     --solar-color: #f59e0b;
     --solar-fill: rgba(245, 158, 11, 0.15);
-    
+
     --solar-load-color: #10b981;
     --solar-load-fill: rgba(16, 185, 129, 0.35);
-    
+
     --grid-import-color: #ef4444;
     --grid-import-fill: rgba(239, 68, 68, 0.35);
-    
-    --grid-export-color: #3b82f6;
-    --grid-export-fill: rgba(59, 130, 246, 0.35);
+
+    --grid-export-color: #f59e0b;
+    --grid-export-fill: rgba(245, 158, 11, 0.35);
 }
 
 * {
