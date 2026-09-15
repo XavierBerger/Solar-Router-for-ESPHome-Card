@@ -71,7 +71,7 @@ export class EnergyChartRenderer {
                     label: "Solaire Direct (W)",
                     stroke: "rgba(16, 185, 129, 0)",
                     width: 0,
-                    fill: null
+                    fill: "rgba(16, 185, 129, 0.35)"
                 },
                 {
                     label: "Consommation (W)",
@@ -81,11 +81,6 @@ export class EnergyChartRenderer {
                 }
             ],
             bands: [
-                {
-                    series: [1, 2],
-                    fill: "rgba(16, 185, 129, 0.35)",
-                    dir: -1
-                },
                 {
                     series: [2, 3],
                     fill: "rgba(239, 68, 68, 0.35)",
