@@ -18,13 +18,14 @@ export class NormalizedEnergyData {
             this.timestamps,
             this.solar,
             this.solarToLoad,
-            this.gridImport
+            this.consumption
         ];
     }
 
     toGridChartData() {
         const len = this.gridImport.length;
         const negativeImport = new Float32Array(len);
+
         for (let i = 0; i < len; i++) {
             negativeImport[i] = -this.gridImport[i];
         }
