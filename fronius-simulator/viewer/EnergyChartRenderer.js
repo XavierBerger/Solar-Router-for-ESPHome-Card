@@ -17,7 +17,7 @@ export class EnergyChartRenderer {
     render(normalizedData) {
         this.currentData = normalizedData;
 
-        const mainData = normalizedData.toMainChartData();
+        const mainData = this.buildMainChartData(normalizedData);
         const gridData = normalizedData.toGridChartData();
 
         if (!this.mainChart || !this.gridChart) {
@@ -26,6 +26,21 @@ export class EnergyChartRenderer {
             this.mainChart.setData(mainData);
             this.gridChart.setData(gridData);
         }
+    }
+
+    buildMainChartData(normalizedData) {
+        const len = normalizedData.timestamps.length;
+        const zero = new Float32Array(len);
+        const solarToLoadDuplicate = normalizedData.solarToLoad.slice();
+
+        return [
+            normalizedData.timestamps,
+            normalizedData.solar,
+            zero,
+            normalizedData.solarToLoad,
+            solarToLoadDuplicate,
+            normalizedData.consumption
+        ];
     }
 
     buildCharts(mainData, gridData) {
@@ -68,23 +83,40 @@ export class EnergyChartRenderer {
                     fill: "rgba(245, 158, 11, 0.12)"
                 },
                 {
+                    label: "",
+                    stroke: "rgba(0, 0, 0, 0)",
+                    width: 0,
+                    band: true
+                },
+                {
                     label: "Solaire Direct (W)",
                     stroke: "rgba(16, 185, 129, 0)",
                     width: 0,
+                    band: true,
                     fill: "rgba(16, 185, 129, 0.35)"
+                },
+                {
+                    label: "",
+                    stroke: "rgba(0, 0, 0, 0)",
+                    width: 0,
+                    band: true
                 },
                 {
                     label: "Consommation (W)",
                     stroke: "#3b82f6",
                     width: 2,
-                    fill: null
+                    band: true,
+                    fill: "rgba(239, 68, 68, 0.35)"
                 }
             ],
             bands: [
                 {
                     series: [2, 3],
-                    fill: "rgba(239, 68, 68, 0.35)",
-                    dir: -1
+                    fill: "rgba(16, 185, 129, 0.35)"
+                },
+                {
+                    series: [4, 5],
+                    fill: "rgba(239, 68, 68, 0.35)"
                 }
             ]
         };
