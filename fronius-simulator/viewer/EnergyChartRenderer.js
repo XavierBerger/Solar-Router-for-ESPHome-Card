@@ -93,7 +93,7 @@ export class EnergyChartRenderer {
                     stroke: "rgba(16, 185, 129, 0)",
                     width: 0,
                     band: true,
-                    fill: "rgba(16, 185, 129, 0.35)"
+                    fill: "rgba(16, 185, 129, 0.85)"
                 },
                 {
                     label: "",
@@ -106,17 +106,17 @@ export class EnergyChartRenderer {
                     stroke: "#3b82f6",
                     width: 2,
                     band: true,
-                    fill: "rgba(239, 68, 68, 0.35)"
+                    fill: "rgba(239, 68, 68, 0.60)"
                 }
             ],
             bands: [
                 {
                     series: [2, 3],
-                    fill: "rgba(16, 185, 129, 0.35)"
+                    fill: "rgba(16, 185, 129, 0.85)"
                 },
                 {
                     series: [4, 5],
-                    fill: "rgba(239, 68, 68, 0.35)"
+                    fill: "rgba(239, 68, 68, 0.60)"
                 }
             ]
         };
