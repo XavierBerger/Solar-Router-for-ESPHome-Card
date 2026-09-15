@@ -14,11 +14,14 @@ export class NormalizedEnergyData {
     }
 
     toMainChartData() {
+        const zero = new Float32Array(this.timestamps.length);
+
         return [
             this.timestamps,
-            this.solar,
+            zero,
             this.solarToLoad,
-            this.consumption
+            this.consumption,
+            this.solar
         ];
     }
 
