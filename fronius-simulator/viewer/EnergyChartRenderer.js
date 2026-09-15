@@ -2,15 +2,16 @@ export class EnergyChartRenderer {
     constructor(mainContainerEl, gridContainerEl) {
         this.mainContainer = mainContainerEl;
         this.gridContainer = gridContainerEl;
-        
+
         this.syncGroup = uPlot.sync("solar-router-sync");
-        
+
         this.mainChart = null;
         this.gridChart = null;
         this.currentData = null;
 
         this.resizeObserver = new ResizeObserver(() => this.handleResize());
         this.resizeObserver.observe(this.mainContainer);
+        this.resizeObserver.observe(this.gridContainer);
     }
 
     render(normalizedData) {
@@ -48,8 +49,15 @@ export class EnergyChartRenderer {
                 y: { auto: true, autoMin: 0 }
             },
             axes: [
-                { stroke: "#94a3b8", grid: { stroke: "#334155", width: 1 } },
-                { stroke: "#94a3b8", grid: { stroke: "#334155", width: 1 }, label: "Watts (W)" }
+                {
+                    stroke: "#94a3b8",
+                    grid: { stroke: "#334155", width: 1 }
+                },
+                {
+                    stroke: "#94a3b8",
+                    grid: { stroke: "#334155", width: 1 },
+                    label: "Watts (W)"
+                }
             ],
             series: [
                 {},
@@ -61,15 +69,27 @@ export class EnergyChartRenderer {
                 },
                 {
                     label: "Solaire Direct (W)",
-                    stroke: "#10b981",
-                    width: 1.5,
-                    fill: "rgba(16, 185, 129, 0.35)"
+                    stroke: "rgba(16, 185, 129, 0)",
+                    width: 0,
+                    fill: null
                 },
                 {
-                    label: "Import Réseau (W)",
-                    stroke: "#ef4444",
-                    width: 1.5,
-                    fill: "rgba(239, 68, 68, 0.35)"
+                    label: "Consommation (W)",
+                    stroke: "#3b82f6",
+                    width: 2,
+                    fill: null
+                }
+            ],
+            bands: [
+                {
+                    series: [1, 2],
+                    fill: "rgba(16, 185, 129, 0.35)",
+                    dir: -1
+                },
+                {
+                    series: [2, 3],
+                    fill: "rgba(239, 68, 68, 0.35)",
+                    dir: -1
                 }
             ]
         };
@@ -86,16 +106,23 @@ export class EnergyChartRenderer {
                 y: { auto: true }
             },
             axes: [
-                { stroke: "#94a3b8", grid: { stroke: "#334155", width: 1 } },
-                { stroke: "#94a3b8", grid: { stroke: "#334155", width: 1 }, label: "Watts (W)" }
+                {
+                    stroke: "#94a3b8",
+                    grid: { stroke: "#334155", width: 1 }
+                },
+                {
+                    stroke: "#94a3b8",
+                    grid: { stroke: "#334155", width: 1 },
+                    label: "Watts (W)"
+                }
             ],
             series: [
                 {},
                 {
                     label: "Export Réseau (+W)",
-                    stroke: "#3b82f6",
+                    stroke: "#f59e0b",
                     width: 1.5,
-                    fill: "rgba(59, 130, 246, 0.35)"
+                    fill: "rgba(245, 158, 11, 0.35)"
                 },
                 {
                     label: "Import Réseau (-W)",
@@ -103,15 +130,38 @@ export class EnergyChartRenderer {
                     width: 1.5,
                     fill: "rgba(239, 68, 68, 0.35)"
                 }
-            ]
+            ],
+            hooks: {
+                draw: [this.drawZeroLine]
+            }
         };
 
         this.mainChart = new uPlot(mainOpts, mainData, this.mainContainer);
         this.gridChart = new uPlot(gridOpts, gridData, this.gridContainer);
     }
 
+    drawZeroLine = (chart) => {
+        const yScale = chart.scales.y;
+        if (yScale.min > 0 || yScale.max < 0) {
+            return;
+        }
+
+        const y = chart.valToPos(0, "y", true);
+        const { ctx, bbox } = chart;
+
+        ctx.save();
+        ctx.strokeStyle = "#64748b";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(bbox.left, Math.round(y) + 0.5);
+        ctx.lineTo(bbox.left + bbox.width, Math.round(y) + 0.5);
+        ctx.stroke();
+        ctx.restore();
+    };
+
     resetZoom() {
         if (!this.currentData) return;
+
         const ts = this.currentData.timestamps;
         const min = ts[0];
         const max = ts[ts.length - 1];
