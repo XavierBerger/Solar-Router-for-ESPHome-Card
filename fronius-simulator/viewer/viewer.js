@@ -36,13 +36,11 @@ class ViewerApp {
             const normalizedData = SimulatorDataAdapter.transform(rawJson);
 
             this.renderer.render(normalizedData);
-
             this.updateKPIs(normalizedData.metadata);
             this.updateStatus('success', 'Connecté');
             this.metaEl.textContent = `${normalizedData.metadata.sampleCount} points (1 mn intervalle)`;
-
         } catch (err) {
-            console.error("[ViewerApp] Échec :", err);
+            console.error('[ViewerApp] Échec :', err);
             this.updateStatus('error', 'Erreur de chargement');
             this.showError(`Impossible de charger /simulation/day : ${err.message}`);
         }
@@ -63,9 +61,9 @@ class ViewerApp {
     }
 
     updateKPIs(meta) {
-        document.getElementById('kpi-pv').textContent = `${(meta.energyPvWh / 1000).toFixed(2)} kWh`;
-        document.getElementById('kpi-load').textContent = `${(meta.energyLoadWh / 1000).toFixed(2)} kWh`;
-        document.getElementById('kpi-autocons').textContent = `${(meta.autoconsoRatio * 100).toFixed(1)} %`;
+        document.getElementById('kpi-pv').textContent = `${(meta.pvEnergyWh / 1000).toFixed(2)} kWh`;
+        document.getElementById('kpi-load').textContent = `${(meta.loadEnergyWh / 1000).toFixed(2)} kWh`;
+        document.getElementById('kpi-autocons').textContent = `${(meta.selfConsumptionRatio * 100).toFixed(1)} %`;
         document.getElementById('kpi-autonomy').textContent = `${(meta.autonomyRatio * 100).toFixed(1)} %`;
     }
 }
