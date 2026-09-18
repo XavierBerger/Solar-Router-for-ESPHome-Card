@@ -1,0 +1,204 @@
+:root {
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --border-color: #334155;
+    --text-color: #f8fafc;
+    --text-muted: #94a3b8;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-header {
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.app-header h1 {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.status-badge.loading {
+    background-color: #f59e0b22;
+    color: #f59e0b;
+    border: 1px solid #f59e0b88;
+}
+
+.status-badge.success {
+    background-color: #10b98122;
+    color: #10b981;
+    border: 1px solid #10b98188;
+}
+
+.status-badge.error {
+    background-color: #ef444422;
+    color: #ef4444;
+    border: 1px solid #ef444488;
+}
+
+.meta-info {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.dashboard-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+    height: calc(100vh - 60px);
+}
+
+.error-banner {
+    background-color: rgba(239, 68, 68, 0.2);
+    border: 1px solid #ef4444;
+    color: #fca5a5;
+    padding: 10px 16px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.error-banner.hidden {
+    display: none;
+}
+
+.error-banner button {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--card-bg);
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.btn {
+    background-color: #334155;
+    color: var(--text-color);
+    border: 1px solid #475569;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background-color 0.2s;
+}
+
+.btn:hover {
+    background-color: #475569;
+}
+
+.kpi-container {
+    display: flex;
+    gap: 20px;
+}
+
+.kpi-card {
+    font-size: 0.85rem;
+}
+
+.kpi-label {
+    color: var(--text-muted);
+}
+
+.kpi-value {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-left: 4px;
+}
+
+.charts-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+}
+
+.chart-box {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-chart-box {
+    flex: 7;
+    min-height: 0;
+}
+
+.grid-chart-box {
+    flex: 3;
+    min-height: 0;
+}
+
+.chart-header h2 {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.chart-container {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    position: relative;
+}
+
+.uplot {
+    font-family: inherit !important;
+}
+
+.uplot .u-legend {
+    color: var(--text-color) !important;
+    font-size: 0.8rem !important;
+}
+
+.uplot .u-axis {
+    color: var(--text-muted) !important;
+}
