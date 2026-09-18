@@ -1,0 +1,52 @@
+name: CI
+
+# push covers every branch; the pull_request trigger adds the merge-commit
+# check on requests targeting main, at the cost of a duplicate run for those.
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fronius-simulator:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        # The viewer is resolved against the working directory, and both test
+        # suites are invoked from here.
+        working-directory: fronius-simulator
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy,rustfmt
+          rustup default stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache cargo artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            fronius-simulator/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('fronius-simulator/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
+
+      - run: cargo fmt --check
+
+      - run: cargo clippy --all-targets -- -D warnings
+
+      - run: cargo test
+
+      # Node's built-in runner: no package.json, no install step.
+      - run: node --test 'viewer-tests/*.test.js'
