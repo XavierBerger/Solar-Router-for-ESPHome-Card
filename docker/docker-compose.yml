@@ -6,4 +6,21 @@ services:
       - "8123:8123"
     volumes:
       - ./ha-config:/config
+    depends_on:
+      - fronius-simulator
+    restart: unless-stopped
+
+  fronius-simulator:
+    container_name: fronius-simulator
+    build:
+      context: ..
+      dockerfile: fronius-simulator/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      # Served by ServeDir relative to the image WORKDIR (/home/fronius).
+      # Mounted rather than baked in so viewer edits need no image rebuild.
+      - ../fronius-simulator/viewer:/home/fronius/viewer:ro
+    environment:
+      SIM_SITE_NAME: "Development Fronius Simulator"
     restart: unless-stopped
