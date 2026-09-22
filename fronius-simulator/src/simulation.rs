@@ -385,7 +385,7 @@ mod tests {
     use super::{
         APPLIANCE_EVENTS, APPLIANCE_GRID_SECONDS, DAY_SECONDS, FRIDGE_ON_SECONDS, FRIDGE_POWER_W,
         HORIZON_RISE_END_SECONDS, HORIZON_RISE_START_SECONDS, HORIZON_SET_END_SECONDS,
-        InverterStatus, OCCUPANCY_SWING_W, Simulation,
+        HORIZON_SET_START_SECONDS, InverterStatus, OCCUPANCY_SWING_W, Simulation,
     };
     use crate::config::Config;
     use std::time::Duration;
@@ -591,8 +591,9 @@ mod tests {
 
         assert_eq!(samples[120].day_seconds, 2.0 * 3_600.0);
         assert_eq!(samples[120].pv_power_w, 0.0);
-        assert_eq!(samples[360].day_seconds, 6.0 * 3_600.0);
-        assert_eq!(samples[360].pv_power_w, 0.0);
+        let first_light = (HORIZON_RISE_START_SECONDS / 60.0) as usize;
+        assert_eq!(samples[first_light].pv_power_w, 0.0);
+        assert!(samples[first_light + 1].pv_power_w > 0.0);
         assert!(samples[750].pv_power_w > 0.0);
         assert!(samples[750].energy_day_wh > samples[700].energy_day_wh);
         assert!(samples[1_439].energy_day_wh >= samples[750].energy_day_wh);
@@ -607,8 +608,10 @@ mod tests {
     #[test]
     fn energy_counters_are_monotonic_across_simulated_days() {
         let sim = simulation();
-        let morning = sim.sample_at_simulated_seconds(8.0 * 3_600.0);
-        let evening = sim.sample_at_simulated_seconds(18.0 * 3_600.0);
+        // Both probes sit inside the horizon window: 08:00 is astronomical
+        // sunrise but still behind the relief, so it would read a flat zero.
+        let morning = sim.sample_at_simulated_seconds(HORIZON_RISE_END_SECONDS);
+        let evening = sim.sample_at_simulated_seconds(HORIZON_SET_START_SECONDS);
         let next_morning = sim.sample_at_simulated_seconds(32.0 * 3_600.0);
 
         assert!(evening.energy_day_wh > morning.energy_day_wh);
