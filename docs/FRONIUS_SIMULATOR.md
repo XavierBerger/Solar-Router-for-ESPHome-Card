@@ -50,18 +50,18 @@ Unsupported optional storage and Ohmpilot collections return successful empty `B
   "sample_count": 8640,
   "duration_seconds": 86400,
   "summary": {
-    "pv_energy_wh": 39037.9,
-    "load_energy_wh": 20266.3,
-    "grid_import_wh": 10667.0,
-    "grid_export_wh": 29438.7
+    "pv_energy_wh": 17910.2,
+    "load_energy_wh": 13510.0,
+    "grid_import_wh": 9114.7,
+    "grid_export_wh": 13515.0
   },
   "samples": [
     {
       "time": "12:30:00",
       "sim_time_seconds": 45000.0,
-      "pv_power_w": 4402.1,
-      "load_power_w": 714.1,
-      "grid_power_w": -3688.0
+      "pv_power_w": 1847.2,
+      "load_power_w": 3033.4,
+      "grid_power_w": 1186.2
     }
   ]
 }
@@ -86,9 +86,9 @@ If that line is replaced by a `WARNING`, the viewer will answer 404 while the Fr
 
 The model simulates one PV inverter and one grid smart meter.
 
-- PV production is zero at night, rises after 06:00, peaks around midday, and falls to zero after 20:00.
+- PV production follows a wide clear-sky sine centred on 14:45, clipped by a horizon mask that stands for relief east and west of the array: nothing before 08:45, a steep ramp to 09:45, a long plateau, then a sharp fall between 18:45 and 19:50.
 - Deterministic seeded cloud variation changes the clear-sky curve while keeping test runs repeatable.
-- Load has a residential baseline with morning, lunch, and evening peaks.
+- Load is a low baseline lifted by a slow occupancy swing, a fridge duty cycle, and a schedule of rectangular appliance runs -- the off-peak water heater from 00:00 to 01:40, the morning rush, midday and evening cooking, and two late loads. Every event edge sits on a five-minute grid, which keeps the energy integration exact over each rectangle.
 - Grid power is calculated as `load - PV`; positive values are grid import, negative values are export.
 - Fronius power-flow load is reported as a negative `P_Load`, matching the Solar API convention commonly consumed by Home Assistant clients.
 - Daily PV energy resets at each simulated midnight. Year and total PV counters continue increasing across simulated days.
@@ -103,8 +103,8 @@ Environment variables:
 | `SIM_BIND`                 | `0.0.0.0:8080`                  | HTTP bind address                                |
 | `SIM_DAY_DURATION_SECONDS` | `86400`                         | Real seconds per simulated day                   |
 | `SIM_START_TIME`           | `06:00:00`                      | Simulated time of day at process start           |
-| `SIM_PEAK_POWER_W`         | `5500`                          | PV peak power in watts                           |
-| `SIM_BASE_LOAD_W`          | `420`                           | Residential baseline load in watts               |
+| `SIM_PEAK_POWER_W`         | `2700`                          | PV peak power in watts                           |
+| `SIM_BASE_LOAD_W`          | `230`                           | Residential baseline load in watts               |
 | `SIM_SEED`                 | `17`                            | Deterministic cloud and appliance variation seed |
 | `SIM_SITE_NAME`            | `Development Fronius Simulator` | Inverter custom name shown to clients            |
 
@@ -113,6 +113,10 @@ The same settings can be supplied as CLI flags:
 ```bash
 fronius-simulator --day-duration-seconds 600 --start-time 08:00 --peak-power-w 6500
 ```
+
+The default array is deliberately a third smaller than the real installation the
+curves were traced from, so that surplus is not permanent and the router has
+something to arbitrate. Pass `--peak-power-w 3950` to get the reference day back.
 
 ## Running With Docker
 
