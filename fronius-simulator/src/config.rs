@@ -3,7 +3,7 @@ use std::{env, net::SocketAddr, time::Duration};
 const DEFAULT_BIND: &str = "0.0.0.0:8080";
 const DEFAULT_DAY_DURATION_SECONDS: u64 = 86_400;
 const DEFAULT_PEAK_POWER_W: f64 = 2_700.0;
-const DEFAULT_BASE_LOAD_W: f64 = 420.0;
+const DEFAULT_BASE_LOAD_W: f64 = 230.0;
 const DEFAULT_SEED: u64 = 17;
 const DEFAULT_SITE_NAME: &str = "Development Fronius Simulator";
 const DEFAULT_START_TIME: &str = "06:00:00";

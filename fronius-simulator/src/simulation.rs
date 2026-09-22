@@ -19,6 +19,58 @@ const HORIZON_SET_END_SECONDS: f64 = 19.0 * 3_600.0 + 50.0 * 60.0;
 /// Flattens the midday plateau; the steep shoulders come from the horizon.
 const CLEAR_SKY_SHAPE: f64 = 1.15;
 
+/// Every appliance edge lands on this grid, which keeps the fixed 300 s
+/// midpoint rule of `integrate_wh` exact over each rectangle.
+const APPLIANCE_GRID_SECONDS: f64 = 300.0;
+const FRIDGE_PERIOD_SECONDS: f64 = 1_800.0;
+const FRIDGE_ON_SECONDS: f64 = 600.0;
+const FRIDGE_POWER_W: f64 = 70.0;
+/// Half-amplitude of the occupancy swing, which peaks in the early evening.
+const OCCUPANCY_SWING_W: f64 = 45.0;
+
+/// One appliance run: a rectangle on the load curve. Start and duration are
+/// multiples of `APPLIANCE_GRID_SECONDS`, an invariant the tests enforce.
+struct ApplianceEvent {
+    start_seconds: u32,
+    duration_seconds: u32,
+    power_w: f64,
+}
+
+impl ApplianceEvent {
+    fn covers(&self, day_seconds: f64) -> bool {
+        let start = f64::from(self.start_seconds);
+
+        (start..start + f64::from(self.duration_seconds)).contains(&day_seconds)
+    }
+}
+
+/// A day of appliance runs read off a real household, ordered by start time.
+const APPLIANCE_EVENTS: [ApplianceEvent; 15] = [
+    event(0, 0, 100, 1_250.0),  // water heater, off-peak tariff
+    event(6, 45, 10, 1_200.0),  // kettle and bathroom
+    event(7, 40, 5, 2_350.0),   // hair dryer
+    event(8, 20, 25, 1_300.0),  // washing machine
+    event(12, 0, 10, 2_250.0),  // oven
+    event(12, 30, 5, 2_800.0),  // hob
+    event(12, 45, 5, 2_550.0),  // hob
+    event(13, 5, 10, 1_450.0),  // dishwasher
+    event(14, 40, 5, 3_300.0),  // router-driven water heater boost
+    event(15, 5, 10, 1_550.0),  // tumble dryer
+    event(18, 30, 5, 2_000.0),  // cooking
+    event(18, 45, 5, 2_700.0),  // cooking
+    event(19, 5, 10, 1_900.0),  // cooking
+    event(21, 20, 15, 2_100.0), // dishwasher
+    event(23, 30, 10, 3_000.0), // evening load
+];
+
+const fn event(hour: u32, minute: u32, duration_minutes: u32, power_w: f64) -> ApplianceEvent {
+    ApplianceEvent {
+        start_seconds: hour * 3_600 + minute * 60,
+        duration_seconds: duration_minutes * 60,
+        power_w,
+    }
+}
+
 /// Offsets so the lifetime and year counters read like an installation that has
 /// been running for years, instead of starting Home Assistant at zero.
 const TOTAL_BASE_ENERGY_WH: f64 = 9_800_000.0;
@@ -184,17 +236,31 @@ impl Simulation {
     }
 
     pub fn load_power(&self, day_seconds: f64) -> f64 {
-        // Residential profile. Each peak is (centre in hours, width in hours)
-        // scaled to watts, on top of an appliance cycle and a slow occupancy
-        // swing peaking in the early evening.
+        // A low baseline the occupancy swing lifts through the evening, the
+        // fridge duty cycle, and whatever appliance happens to be running.
         let hour = day_seconds / 3_600.0;
-        let morning = gaussian(hour, 7.2, 0.75) * 750.0;
-        let lunch = gaussian(hour, 12.7, 1.1) * 260.0;
-        let evening = gaussian(hour, 19.2, 1.35) * 1_150.0;
-        let appliance = (hash_wave(self.seed ^ 0x9e37, day_seconds / 4_800.0) + 1.0) * 85.0;
-        let occupancy = 90.0 * ((2.0 * PI * (hour - 17.0) / 24.0).sin() + 1.0);
+        let occupancy = OCCUPANCY_SWING_W * ((2.0 * PI * (hour - 17.0) / 24.0).sin() + 1.0);
+        let appliances: f64 = APPLIANCE_EVENTS
+            .iter()
+            .filter(|event| event.covers(day_seconds))
+            .map(|event| event.power_w)
+            .sum();
 
-        (self.base_load_w + morning + lunch + evening + appliance + occupancy).max(0.0)
+        (self.base_load_w + occupancy + self.fridge_power(day_seconds) + appliances).max(0.0)
+    }
+
+    /// The fridge compressor, the one load that never stops cycling. Its phase
+    /// comes from the seed but is snapped to `APPLIANCE_GRID_SECONDS`, so the
+    /// energy integration stays exact whatever the seed.
+    fn fridge_power(&self, day_seconds: f64) -> f64 {
+        let phase = seed_phase(self.seed, 4) / (2.0 * PI) * FRIDGE_PERIOD_SECONDS;
+        let phase = (phase / APPLIANCE_GRID_SECONDS).floor() * APPLIANCE_GRID_SECONDS;
+
+        if (day_seconds + phase).rem_euclid(FRIDGE_PERIOD_SECONDS) < FRIDGE_ON_SECONDS {
+            FRIDGE_POWER_W
+        } else {
+            0.0
+        }
     }
 
     fn pv_energy_until(&self, day_seconds: f64) -> f64 {
@@ -296,19 +362,10 @@ fn smoothstep(value: f64) -> f64 {
     x * x * (3.0 - 2.0 * x)
 }
 
-fn gaussian(value: f64, center: f64, width: f64) -> f64 {
-    let x = (value - center) / width;
-    (-0.5 * x * x).exp()
-}
-
 fn seed_phase(seed: u64, lane: u64) -> f64 {
     let mixed = splitmix64(seed ^ lane.wrapping_mul(0x9e37_79b9_7f4a_7c15));
     let fraction = mixed as f64 / u64::MAX as f64;
     fraction * 2.0 * PI
-}
-
-fn hash_wave(seed: u64, value: f64) -> f64 {
-    (value + seed_phase(seed, 2)).sin() * 0.65 + (value * 2.71 + seed_phase(seed, 3)).sin() * 0.35
 }
 
 fn splitmix64(mut value: u64) -> u64 {
@@ -326,8 +383,9 @@ fn percent(value: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        DAY_SECONDS, HORIZON_RISE_END_SECONDS, HORIZON_RISE_START_SECONDS, HORIZON_SET_END_SECONDS,
-        InverterStatus, Simulation,
+        APPLIANCE_EVENTS, APPLIANCE_GRID_SECONDS, DAY_SECONDS, FRIDGE_ON_SECONDS, FRIDGE_POWER_W,
+        HORIZON_RISE_END_SECONDS, HORIZON_RISE_START_SECONDS, HORIZON_SET_END_SECONDS,
+        InverterStatus, OCCUPANCY_SWING_W, Simulation,
     };
     use crate::config::Config;
     use std::time::Duration;
@@ -382,13 +440,85 @@ mod tests {
     }
 
     #[test]
-    fn load_profile_has_morning_and_evening_peaks() {
+    fn appliance_schedule_stays_on_the_integration_grid() {
+        let grid = APPLIANCE_GRID_SECONDS as u32;
+
+        let off_grid: Vec<_> = APPLIANCE_EVENTS
+            .iter()
+            .filter(|event| event.start_seconds % grid != 0 || event.duration_seconds % grid != 0)
+            .map(|event| (event.start_seconds, event.duration_seconds))
+            .collect();
+
+        assert!(
+            off_grid.is_empty(),
+            "these events would make integrate_wh inexact: {off_grid:?}"
+        );
+    }
+
+    #[test]
+    fn the_day_opens_on_an_off_peak_import_block() {
         let sim = simulation();
-        let night = sim.load_power(3.0 * 3_600.0);
-        let morning = sim.load_power(7.2 * 3_600.0);
-        let evening = sim.load_power(19.2 * 3_600.0);
-        assert!(morning > night);
-        assert!(evening > morning);
+
+        let water_heater_running = sim.sample_at_simulated_seconds(0.5 * 3_600.0);
+        let back_to_standby = sim.sample_at_simulated_seconds(3.0 * 3_600.0);
+
+        assert!(
+            water_heater_running.grid_power_w > 1_000.0,
+            "{}",
+            water_heater_running.grid_power_w
+        );
+        assert!(
+            back_to_standby.grid_power_w < 500.0,
+            "{}",
+            back_to_standby.grid_power_w
+        );
+    }
+
+    #[test]
+    fn an_appliance_event_switches_on_and_off_abruptly() {
+        let sim = simulation();
+        let oven = &APPLIANCE_EVENTS[4];
+        let start = f64::from(oven.start_seconds);
+        let end = start + f64::from(oven.duration_seconds);
+        // The fridge is divided out: it cycles on its own schedule and a toggle
+        // landing on an edge would mask the step this test is about.
+        let without_fridge = |second: f64| sim.load_power(second) - sim.fridge_power(second);
+
+        let switch_on = without_fridge(start + 1.0) - without_fridge(start - 1.0);
+        let switch_off = without_fridge(end - 1.0) - without_fridge(end + 1.0);
+
+        assert!((switch_on - oven.power_w).abs() < 1.0, "{switch_on}");
+        assert!((switch_off - oven.power_w).abs() < 1.0, "{switch_off}");
+    }
+
+    #[test]
+    fn the_load_returns_to_its_base_band_between_events() {
+        let sim = simulation();
+        let base = Config::default().base_load_w;
+
+        let quiet = sim.load_power(4.0 * 3_600.0);
+
+        assert!(
+            (base..=base + 2.0 * OCCUPANCY_SWING_W + FRIDGE_POWER_W).contains(&quiet),
+            "{quiet} left the base band around {base}"
+        );
+    }
+
+    #[test]
+    fn the_fridge_cycles_on_and_off() {
+        let sim = simulation();
+        let quiet_hour = 4.0 * 3_600.0;
+
+        let readings: Vec<f64> = (0..6)
+            .map(|slot| sim.load_power(quiet_hour + f64::from(slot) * FRIDGE_ON_SECONDS / 2.0))
+            .collect();
+        let swing = readings.iter().cloned().fold(f64::MIN, f64::max)
+            - readings.iter().cloned().fold(f64::MAX, f64::min);
+
+        assert!(
+            (swing - FRIDGE_POWER_W).abs() < 5.0,
+            "{readings:?} should swing by {FRIDGE_POWER_W}"
+        );
     }
 
     #[test]
