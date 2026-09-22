@@ -4,9 +4,20 @@ use crate::config::Config;
 
 pub const DAY_SECONDS: f64 = 86_400.0;
 /// Fixed daylight window. The simulator is deterministic by design, so sunrise
-/// and sunset follow neither a latitude nor a date.
-const SUNRISE_SECONDS: f64 = 6.0 * 3_600.0;
-const SUNSET_SECONDS: f64 = 20.0 * 3_600.0;
+/// and sunset follow neither a latitude nor a date. The window is wide and
+/// centred on 14:45: the site's own horizon, not the sun, decides when
+/// production starts and stops.
+const SUNRISE_SECONDS: f64 = 8.0 * 3_600.0;
+const SUNSET_SECONDS: f64 = 21.5 * 3_600.0;
+/// Relief east and west of the array, which clips the clear-sky sine into the
+/// shape a real roof produces: dark before 08:45, a steep morning ramp, a long
+/// plateau, then a sharp fall between 18:45 and 19:50.
+const HORIZON_RISE_START_SECONDS: f64 = 8.0 * 3_600.0 + 45.0 * 60.0;
+const HORIZON_RISE_END_SECONDS: f64 = 9.0 * 3_600.0 + 45.0 * 60.0;
+const HORIZON_SET_START_SECONDS: f64 = 18.0 * 3_600.0 + 45.0 * 60.0;
+const HORIZON_SET_END_SECONDS: f64 = 19.0 * 3_600.0 + 50.0 * 60.0;
+/// Flattens the midday plateau; the steep shoulders come from the horizon.
+const CLEAR_SKY_SHAPE: f64 = 1.15;
 
 /// Offsets so the lifetime and year counters read like an installation that has
 /// been running for years, instead of starting Home Assistant at zero.
@@ -156,18 +167,20 @@ impl Simulation {
     }
 
     pub fn pv_power(&self, day_seconds: f64) -> f64 {
-        if !(SUNRISE_SECONDS..=SUNSET_SECONDS).contains(&day_seconds) {
+        let horizon = horizon_factor(day_seconds);
+        if horizon <= 0.0 || !(SUNRISE_SECONDS..=SUNSET_SECONDS).contains(&day_seconds) {
             return 0.0;
         }
 
         let daylight_progress =
             (day_seconds - SUNRISE_SECONDS) / (SUNSET_SECONDS - SUNRISE_SECONDS);
-        // A plain sine is too round for a PV curve: the exponent narrows the
-        // shoulders and keeps a flatter midday plateau.
-        let clear_sky = (PI * daylight_progress).sin().max(0.0).powf(1.35);
+        let clear_sky = (PI * daylight_progress)
+            .sin()
+            .max(0.0)
+            .powf(CLEAR_SKY_SHAPE);
         let cloud = self.cloud_factor(day_seconds);
 
-        (self.peak_power_w * clear_sky * cloud).max(0.0)
+        (self.peak_power_w * clear_sky * horizon * cloud).max(0.0)
     }
 
     pub fn load_power(&self, day_seconds: f64) -> f64 {
@@ -252,6 +265,37 @@ fn integrate_wh(mut power_at_second: impl FnMut(f64) -> f64, until_seconds: f64)
     watt_seconds / 3_600.0
 }
 
+/// Fraction of the sky the array can still see, from 0 behind the relief to 1
+/// in the clear. The ramps are smoothsteps rather than straight lines so the
+/// power curve has no corner where the sun clears or meets the horizon.
+fn horizon_factor(day_seconds: f64) -> f64 {
+    if !(HORIZON_RISE_START_SECONDS..HORIZON_SET_END_SECONDS).contains(&day_seconds) {
+        return 0.0;
+    }
+
+    if day_seconds < HORIZON_RISE_END_SECONDS {
+        return smoothstep(
+            (day_seconds - HORIZON_RISE_START_SECONDS)
+                / (HORIZON_RISE_END_SECONDS - HORIZON_RISE_START_SECONDS),
+        );
+    }
+
+    if day_seconds > HORIZON_SET_START_SECONDS {
+        return 1.0
+            - smoothstep(
+                (day_seconds - HORIZON_SET_START_SECONDS)
+                    / (HORIZON_SET_END_SECONDS - HORIZON_SET_START_SECONDS),
+            );
+    }
+
+    1.0
+}
+
+fn smoothstep(value: f64) -> f64 {
+    let x = value.clamp(0.0, 1.0);
+    x * x * (3.0 - 2.0 * x)
+}
+
 fn gaussian(value: f64, center: f64, width: f64) -> f64 {
     let x = (value - center) / width;
     (-0.5 * x * x).exp()
@@ -281,7 +325,10 @@ fn percent(value: f64) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{DAY_SECONDS, InverterStatus, Simulation};
+    use super::{
+        DAY_SECONDS, HORIZON_RISE_END_SECONDS, HORIZON_RISE_START_SECONDS, HORIZON_SET_END_SECONDS,
+        InverterStatus, Simulation,
+    };
     use crate::config::Config;
     use std::time::Duration;
 
@@ -292,11 +339,46 @@ mod tests {
         })
     }
 
+    /// Share of the nameplate power the sun and the horizon allow at that
+    /// instant, clouds divided out. Shape assertions belong on this fraction:
+    /// comparing raw watts to the day's peak would measure the cloud swing.
+    fn clear_sky_fraction(sim: &Simulation, day_seconds: f64) -> f64 {
+        sim.pv_power(day_seconds) / (sim.peak_power_w * sim.cloud_factor(day_seconds))
+    }
+
     #[test]
-    fn solar_curve_is_zero_at_night_and_positive_at_noon() {
+    fn production_is_dark_outside_the_horizon_window() {
         let sim = simulation();
-        assert_eq!(sim.pv_power(2.0 * 3_600.0), 0.0);
-        assert!(sim.pv_power(12.5 * 3_600.0) > 3_000.0);
+
+        let night = sim.pv_power(2.0 * 3_600.0);
+        let before_the_east_ridge = sim.pv_power(HORIZON_RISE_START_SECONDS);
+        let after_the_west_ridge = sim.pv_power(HORIZON_SET_END_SECONDS);
+
+        assert_eq!(night, 0.0);
+        assert_eq!(before_the_east_ridge, 0.0);
+        assert_eq!(after_the_west_ridge, 0.0);
+    }
+
+    #[test]
+    fn production_plateaus_around_solar_noon() {
+        let sim = simulation();
+
+        let early_afternoon = clear_sky_fraction(&sim, 13.0 * 3_600.0);
+        let late_afternoon = clear_sky_fraction(&sim, 17.0 * 3_600.0);
+
+        assert!(early_afternoon > 0.80, "{early_afternoon}");
+        assert!(late_afternoon > 0.80, "{late_afternoon}");
+    }
+
+    #[test]
+    fn production_ramps_up_behind_the_east_horizon() {
+        let sim = simulation();
+
+        let on_the_ramp = clear_sky_fraction(&sim, HORIZON_RISE_START_SECONDS + 15.0 * 60.0);
+        let past_the_ramp = clear_sky_fraction(&sim, HORIZON_RISE_END_SECONDS + 15.0 * 60.0);
+
+        assert!(on_the_ramp < 0.15, "{on_the_ramp}");
+        assert!(past_the_ramp > 0.30, "{past_the_ramp}");
     }
 
     #[test]
@@ -313,10 +395,10 @@ mod tests {
     fn grid_power_imports_when_load_exceeds_pv_and_exports_when_pv_exceeds_load() {
         let sim = simulation();
         let night = sim.sample_at_simulated_seconds(2.0 * 3_600.0);
-        let noon = sim.sample_at_simulated_seconds(12.5 * 3_600.0);
+        let afternoon = sim.sample_at_simulated_seconds(15.5 * 3_600.0);
 
         assert!(night.grid_power_w > 0.0);
-        assert!(noon.grid_power_w < 0.0);
+        assert!(afternoon.grid_power_w < 0.0);
     }
 
     #[test]
