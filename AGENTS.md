@@ -1,69 +1,43 @@
-# AGENTS.md
+# Agent instructions
 
-## Project
+## Scope
 
-This repository holds two components:
+Work only on **`solar-energy-graphs-card/`**, following
+[`docs/SOLAR-ENERGY-CARD-DEVELOPMENT-PLAN.md`](solar-energy-graphs-card/docs/SOLAR-ENERGY-CARD-DEVELOPMENT-PLAN.md).
+Treat that plan as the source of truth for the card's scope, implementation
+sequence, and validation requirements.
 
-- a **Home Assistant Lovelace card** for a solar router driven by ESPHome;
-- **`fronius-simulator/`**, a Rust service that emulates a Fronius inverter and
-  smart meter over the Fronius Solar API v1, plus a static energy viewer served
-  on `/`. It exists so the card and the Home Assistant integration can be
-  developed without the physical hardware.
+The goal is a Home Assistant Lovelace card containing two synchronized solar
+energy graphs. Do not work on or introduce dependencies on the Fronius
+simulator, its viewer, the Home Assistant integration, or other repository
+components.
 
-See [docs/FRONIUS_SIMULATOR.md](docs/FRONIUS_SIMULATOR.md) for the endpoint
-reference and simulation model, and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
-for the Home Assistant container.
+## Scope boundaries
 
-## Development Environment
+- Keep the card focused on the two graphs and what is needed to read them:
+  titles, axes, units, legends, cursor, and synchronized horizontal zoom.
+- Do not add KPIs, statistics, status panels, toolbars, period selectors, or a
+  zoom-reset button.
+- Do not assume Home Assistant entity IDs, units, signs, or energy-flow
+  semantics. Confirm these with the user before implementing real-data
+  transformations.
+- Keep mock data explicitly separate from real Home Assistant data.
 
-### Docker
+## Development workflow
 
-A **Docker environment** is provided for local development with Home Assistant.
-
-- Configuration file: `docker/docker-compose.yml`
-- Containers: `ha-dev` (`ghcr.io/home-assistant/home-assistant:stable`) and
-  `fronius-simulator`, on the same network
-- Ports: `8123` for Home Assistant, `8080` for the simulator and its viewer
-- Volumes: `docker/ha-config` persists the Home Assistant configuration;
-  `fronius-simulator/viewer` is bind-mounted read-only into the simulator, so
-  viewer edits need no image rebuild
-
-To start it:
-
-```bash
-cd docker
-docker compose up -d
-```
-
-Home Assistant is then on http://localhost:8123, the simulator on
-http://localhost:8080, and the viewer on http://localhost:8080/. Rebuild the
-simulator after a Rust change with `docker/update-fronius-simulator.sh`.
-
-### Simulator and viewer
-
-Run from `fronius-simulator/`, never from the repository root: the viewer
-directory is resolved against the process working directory, and starting the
-binary elsewhere serves a 404 dashboard. The binary prints the path it resolved
-at startup, or warns if it found nothing.
-
-```bash
-cd fronius-simulator
-
-cargo test                              # 30 tests
-cargo clippy --all-targets              # no warnings expected
-cargo fmt --check
-node --test 'viewer-tests/*.test.js'    # 10 tests, Node >= 18, no npm install
-
-cargo run -- --day-duration-seconds 600 # one simulated day in 10 real minutes
-```
-
-## Rules for Agents
-
-- Always use the Docker environment to test modifications
-- Never modify production configuration directly without prior testing
-- Respect the existing project structure
-- Follow Home Assistant best practices for custom components
-- Rust and JavaScript changes must keep both suites green, `clippy` free of
-  warnings and `cargo fmt --check` silent; the CI runs exactly these four
-  commands
-- Code, comments and commit messages are written in English
+- Proceed incrementally in the order described by the plan. Inspect the card's
+  existing structure and tooling before initializing or changing them.
+- At each significant step, explain what changed and its limits, then give
+  precise Home Assistant test steps and ask the user to verify the result.
+- Automated tests and builds do not replace visual confirmation in Home
+  Assistant. Do not mark a step validated or proceed past a required user
+  validation until the user explicitly confirms it.
+- Keep the plan's TODO list current: mark work **En cours** when started,
+  **Validée** only after technical checks and required user confirmation, or
+  **Bloquée** with the reason. Preserve useful history and add newly discovered
+  tasks.
+- Keep the project buildable and preserve previously validated behavior.
+- Run the relevant existing tests, build, and formatting checks for changes;
+  report any checks that could not be run.
+- Keep source code, code comments, and commit messages in English. Follow the
+  card's existing conventions and Home Assistant Lovelace practices.
