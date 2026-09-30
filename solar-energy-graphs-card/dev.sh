@@ -69,8 +69,9 @@ podman run --rm \
       cp -R dist /source/dist
     fi
     if [ "$1" = coverage ]; then
-      rm -rf /source/coverage
-      cp -R coverage /source/coverage
+      rm -rf /source/reports/coverage
+      mkdir -p /source/reports
+      cp -R coverage /source/reports/coverage
     fi
     if [ "$1" = mutation ]; then
       rm -rf /source/reports/mutation

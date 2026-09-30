@@ -10,6 +10,8 @@
 - [ ] Corriger les tests qui ne passent pas (`./dev.sh test`)
 - [ ] Corriger les tests qui ne resistent pas à la mutation
 - [ ] Déplacer le résultat de la couverture de tests dans `reports/coverage`
+- [ ] CI: executer tous les tests unitaires à chaque push
+- [ ] CI: executer les tests de mutation sur PR
 
 # Corrections
 - [ ] Faire disparaitre le bouton de précision au chargement d'un nouveau jour sans haure définition
